@@ -30,7 +30,7 @@ const initialProducts: Product[] = [
     name: 'Air Max 270',
     brand: 'Nike',
     category: 'tenis',
-    price: 599.99,
+    price: 0,
     rating: 4.8,
     selectedColorId: '1-1',
     colors: [
@@ -59,7 +59,7 @@ const initialProducts: Product[] = [
     name: 'Ultraboost 22',
     brand: 'Adidas',
     category: 'tenis',
-    price: 749.99,
+    price: 0,
     rating: 4.9,
     selectedColorId: '2-1',
     colors: [
@@ -83,7 +83,7 @@ const initialProducts: Product[] = [
     name: 'Camisa Brasil 2024',
     brand: 'Nike',
     category: 'camiseta-time',
-    price: 299.99,
+    price: 0,
     rating: 4.7,
     selectedColorId: '3-1',
     colors: [
@@ -106,7 +106,7 @@ const initialProducts: Product[] = [
     name: 'Camisa Argentina 2024',
     brand: 'Adidas',
     category: 'camiseta-time',
-    price: 319.99,
+    price: 0,
     rating: 4.8,
     selectedColorId: '4-1',
     colors: [
@@ -124,7 +124,7 @@ const initialProducts: Product[] = [
     name: 'Camisa Society Premium',
     brand: 'Nike',
     category: 'society',
-    price: 189.99,
+    price: 0,
     rating: 4.5,
     selectedColorId: '5-1',
     colors: [
@@ -147,7 +147,7 @@ const initialProducts: Product[] = [
     name: 'Camisa Society Clássica',
     brand: 'Adidas',
     category: 'society',
-    price: 169.99,
+    price: 0,
     rating: 4.4,
     selectedColorId: '6-1',
     colors: [
@@ -165,7 +165,7 @@ const initialProducts: Product[] = [
     name: 'Mercurial Vapor 15',
     brand: 'Nike',
     category: 'chuteira',
-    price: 899.99,
+    price: 0,
     rating: 4.9,
     selectedColorId: '7-1',
     colors: [
@@ -188,7 +188,7 @@ const initialProducts: Product[] = [
     name: 'Predator Edge',
     brand: 'Adidas',
     category: 'chuteira',
-    price: 799.99,
+    price: 0,
     rating: 4.8,
     selectedColorId: '8-1',
     colors: [
@@ -206,7 +206,7 @@ const initialProducts: Product[] = [
     name: 'Mochila Brasília',
     brand: 'Nike',
     category: 'bolsa',
-    price: 199.99,
+    price: 0,
     rating: 4.6,
     selectedColorId: '9-1',
     colors: [
@@ -229,7 +229,7 @@ const initialProducts: Product[] = [
     name: 'Bolsa Esportiva Classic',
     brand: 'Adidas',
     category: 'bolsa',
-    price: 149.99,
+    price: 0,
     rating: 4.5,
     selectedColorId: '10-1',
     colors: [
@@ -329,7 +329,7 @@ export default function Home() {
   const getWhatsAppMessage = (product: Product) => {
     const selectedColor = product.colors.find(c => c.id === product.selectedColorId)
     const categoryName = categoryNames[product.category]
-    return `Olá! Gostaria de saber mais sobre ${categoryName.toLowerCase()} *${product.name}* da ${product.brand}, na cor ${selectedColor?.name}, no valor de R$ ${product.price.toFixed(2).replace('.', ',')}.`
+    return `Olá! Gostaria de saber mais sobre ${categoryName.toLowerCase()} *${product.name}* da ${product.brand}, na cor ${selectedColor?.name}.`
   }
 
   const openWhatsApp = (product: Product) => {
@@ -416,14 +416,25 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Encontre o produto
-            <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"> perfeito</span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Explore nossa coleção completa de produtos esportivos com design moderno e qualidade garantida
-          </p>
+        <div className="relative mb-12 overflow-hidden rounded-3xl">
+          <div className="absolute inset-0">
+            <img
+              src="https://images.unsplash.com/photo-1556906781-9a412961c28c?w=1200&h=600&fit=crop"
+              alt="Produtos esportivos"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 via-blue-800/70 to-cyan-800/60"></div>
+          </div>
+          
+          <div className="relative text-center py-20 px-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Encontre o produto
+              <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent"> perfeito</span>
+            </h2>
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+              Explore nossa coleção completa de produtos esportivos com design moderno e qualidade garantida
+            </p>
+          </div>
         </div>
 
         {/* Category Tabs */}
@@ -582,8 +593,8 @@ export default function Home() {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-gray-900">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
+                    <span className="text-lg font-medium text-gray-600">
+                      Consulte o preço
                     </span>
                     <button
                       onClick={() => openWhatsApp(product)}
