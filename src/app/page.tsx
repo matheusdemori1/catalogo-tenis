@@ -194,10 +194,10 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando produtos...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-300">Carregando produtos...</p>
         </div>
       </div>
     )
@@ -205,12 +205,12 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-400 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
           >
             Tentar novamente
           </button>
@@ -220,16 +220,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
       {/* Header Melhorado */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-blue-100/50 sticky top-0 z-40 shadow-lg shadow-blue-100/20">
+      <header className="bg-black/90 backdrop-blur-md border-b border-gray-800/50 sticky top-0 z-40 shadow-lg shadow-black/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-6">
               {/* Logo Melhorada */}
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-cyan-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 transform rotate-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-600 via-red-600 to-orange-700 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25 transform rotate-3">
                     <ShoppingBag className="w-6 h-6 text-white transform -rotate-3" />
                   </div>
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
@@ -237,10 +237,10 @@ export default function Home() {
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-orange-500 bg-clip-text text-transparent">
                     {siteConfig.siteName}
                   </h1>
-                  <p className="text-sm text-gray-500 font-medium hidden sm:block">{siteConfig.siteDescription}</p>
+                  <p className="text-sm text-gray-400 font-medium hidden sm:block">{siteConfig.siteDescription}</p>
                 </div>
               </div>
             </div>
@@ -250,18 +250,18 @@ export default function Home() {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => setShowSiteConfig(true)}
-                    className="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                    className="p-3 text-gray-400 hover:text-orange-400 hover:bg-gray-800 rounded-xl transition-all duration-200"
                     title="Configurações do Site"
                   >
                     <Settings className="w-5 h-5" />
                   </button>
-                  <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-xl border border-green-200">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-700 font-semibold">Admin</span>
+                  <div className="flex items-center space-x-2 bg-green-900/50 px-3 py-2 rounded-xl border border-green-800">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-300 font-semibold">Admin</span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="text-gray-600 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-xl transition-all duration-200 font-medium"
+                    className="text-gray-400 hover:text-red-400 hover:bg-red-900/20 px-3 py-2 rounded-xl transition-all duration-200 font-medium"
                   >
                     Sair
                   </button>
@@ -269,7 +269,7 @@ export default function Home() {
               ) : (
                 <button
                   onClick={() => setShowLogin(true)}
-                  className="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 group"
+                  className="p-3 text-gray-400 hover:text-orange-400 hover:bg-gray-800 rounded-xl transition-all duration-200 group"
                   title="Login Administrativo"
                 >
                   <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -290,15 +290,15 @@ export default function Home() {
               alt="Produtos esportivos"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 via-blue-800/70 to-cyan-800/60"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-gray-900/80 to-slate-900/70"></div>
           </div>
           
           <div className="relative text-center py-20 px-6">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
               {siteConfig.heroTitle.split(' ').slice(0, -1).join(' ')}
-              <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent"> {siteConfig.heroTitle.split(' ').slice(-1)}</span>
+              <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent"> {siteConfig.heroTitle.split(' ').slice(-1)}</span>
             </h2>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
               {siteConfig.heroSubtitle}
             </p>
           </div>
@@ -310,8 +310,8 @@ export default function Home() {
             onClick={() => setSelectedCategory('all')}
             className={`px-6 py-3 rounded-xl font-medium transition-all ${
               selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/25'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
             }`}
           >
             Todos
@@ -322,8 +322,8 @@ export default function Home() {
               onClick={() => setSelectedCategory(key as Product['category'])}
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 selectedCategory === key
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/25'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
               }`}
             >
               {name}
@@ -334,13 +334,13 @@ export default function Home() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Buscar produtos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-white placeholder-gray-400"
             />
           </div>
           
@@ -349,8 +349,8 @@ export default function Home() {
               onClick={() => setSelectedBrand('all')}
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 selectedBrand === 'all'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/25'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
               }`}
             >
               Todas as Marcas
@@ -361,8 +361,8 @@ export default function Home() {
                 onClick={() => setSelectedBrand(brand)}
                 className={`px-6 py-3 rounded-xl font-medium transition-all ${
                   selectedBrand === brand
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/25'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                 }`}
               >
                 {brand}
@@ -387,7 +387,7 @@ export default function Home() {
             const selectedColor = product.colors.find(c => c.id === product.selectedColorId)
             
             return (
-              <div key={product.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+              <div key={product.id} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 overflow-hidden group border border-gray-700/50">
                 <div className="relative">
                   <img
                     src={selectedColor?.image}
@@ -403,7 +403,7 @@ export default function Home() {
                           e.stopPropagation()
                           setEditingProduct(product)
                         }}
-                        className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
                         title="Editar produto"
                       >
                         <Edit className="w-4 h-4" />
@@ -423,7 +423,7 @@ export default function Home() {
                     </div>
                   )}
                   <div className="absolute top-2 left-2">
-                    <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-xs font-medium text-blue-600 rounded-lg">
+                    <span className="px-2 py-1 bg-black/70 backdrop-blur-sm text-xs font-medium text-orange-400 rounded-lg">
                       {categoryNames[product.category]}
                     </span>
                   </div>
@@ -431,17 +431,17 @@ export default function Home() {
                 
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-blue-600">{product.brand}</span>
+                    <span className="text-sm font-medium text-orange-400">{product.brand}</span>
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-600">{product.rating}</span>
+                      <span className="text-sm text-gray-400">{product.rating}</span>
                     </div>
                   </div>
                   
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">{product.name}</h3>
+                  <h3 className="text-lg font-bold text-white mb-3">{product.name}</h3>
                   
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="text-sm text-gray-600">Cores:</span>
+                    <span className="text-sm text-gray-400">Cores:</span>
                     <div className="flex gap-1">
                       {product.colors.map((color) => (
                         <div key={color.id} className="relative">
@@ -449,8 +449,8 @@ export default function Home() {
                             onClick={() => selectColor(product.id, color.id)}
                             className={`w-6 h-6 rounded-full border-2 transition-all ${
                               color.id === product.selectedColorId
-                                ? 'border-blue-600 scale-110'
-                                : 'border-gray-300 hover:border-gray-400'
+                                ? 'border-orange-500 scale-110 shadow-lg shadow-orange-500/50'
+                                : 'border-gray-600 hover:border-gray-500'
                             }`}
                             style={{ backgroundColor: color.hex }}
                             title={color.name}
@@ -472,12 +472,12 @@ export default function Home() {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-medium text-gray-600">
+                    <span className="text-lg font-medium text-gray-400">
                       Consulte o preço
                     </span>
                     <button
                       onClick={() => openWhatsApp(product)}
-                      className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all flex items-center gap-2 text-sm font-medium"
+                      className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all flex items-center gap-2 text-sm font-medium shadow-lg shadow-green-500/25"
                     >
                       <MessageCircle className="w-4 h-4" />
                       WhatsApp
@@ -491,7 +491,7 @@ export default function Home() {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Nenhum produto encontrado</p>
+            <p className="text-gray-400 text-lg">Nenhum produto encontrado</p>
           </div>
         )}
       </main>
@@ -526,12 +526,12 @@ export default function Home() {
       {/* Login Modal */}
       {showLogin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">Login Administrativo</h3>
+              <h3 className="text-xl font-bold text-white">Login Administrativo</h3>
               <button
                 onClick={() => setShowLogin(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-300"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -543,12 +543,12 @@ export default function Home() {
                 placeholder="Digite a senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-400"
                 onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
               />
               <button
                 onClick={handleLogin}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all font-medium"
+                className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-medium"
               >
                 Entrar
               </button>
@@ -601,13 +601,13 @@ function SiteConfigModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold flex items-center gap-2">
+          <h3 className="text-xl font-bold flex items-center gap-2 text-white">
             <Settings className="w-6 h-6" />
             Configurações do Site
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-300">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -615,69 +615,69 @@ function SiteConfigModal({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Site</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Site</label>
               <input
                 type="text"
                 value={formData.siteName}
                 onChange={(e) => setFormData(prev => ({ ...prev, siteName: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
               <input
                 type="text"
                 value={formData.siteDescription}
                 onChange={(e) => setFormData(prev => ({ ...prev, siteDescription: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Título Hero</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Título Hero</label>
               <input
                 type="text"
                 value={formData.heroTitle}
                 onChange={(e) => setFormData(prev => ({ ...prev, heroTitle: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp (com código do país)</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">WhatsApp (com código do país)</label>
               <input
                 type="text"
                 value={formData.whatsappNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
                 placeholder="5518981100463"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Subtítulo Hero</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Subtítulo Hero</label>
             <textarea
               value={formData.heroSubtitle}
               onChange={(e) => setFormData(prev => ({ ...prev, heroSubtitle: e.target.value }))}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Imagem Hero (URL)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Imagem Hero (URL)</label>
             <input
               type="url"
               value={formData.heroImage}
               onChange={(e) => setFormData(prev => ({ ...prev, heroImage: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
               required
             />
           </div>
@@ -686,13 +686,13 @@ function SiteConfigModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-700 transition-colors font-medium"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all font-medium flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-medium flex items-center justify-center gap-2"
             >
               <Check className="w-5 h-5" />
               Salvar Configurações
@@ -778,12 +778,12 @@ function ProductForm({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold">
+          <h3 className="text-xl font-bold text-white">
             {product ? 'Editar Produto' : 'Adicionar Produto'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-300">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -791,34 +791,34 @@ function ProductForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Marca</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Marca</label>
               <input
                 type="text"
                 value={formData.brand}
                 onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
                 placeholder="Ex: Nike, Adidas, Puma, etc."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as Product['category'] }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
               >
                 {Object.entries(categoryNames).map(([key, name]) => (
                   <option key={key} value={key}>{name}</option>
@@ -827,19 +827,19 @@ function ProductForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Preço (R$)</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Preço (R$)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Avaliação</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Avaliação</label>
               <input
                 type="number"
                 step="0.1"
@@ -847,7 +847,7 @@ function ProductForm({
                 max="5"
                 value={formData.rating}
                 onChange={(e) => setFormData(prev => ({ ...prev, rating: parseFloat(e.target.value) || 5 }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                 required
               />
             </div>
@@ -855,11 +855,11 @@ function ProductForm({
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <label className="block text-sm font-medium text-gray-700">Cores</label>
+              <label className="block text-sm font-medium text-gray-300">Cores</label>
               <button
                 type="button"
                 onClick={addColor}
-                className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-1"
+                className="px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" />
                 Adicionar Cor
@@ -868,34 +868,34 @@ function ProductForm({
 
             <div className="space-y-3">
               {formData.colors.map((color, index) => (
-                <div key={color.id} className="flex gap-3 items-center p-3 border border-gray-200 rounded-xl">
+                <div key={color.id} className="flex gap-3 items-center p-3 bg-gray-700 border border-gray-600 rounded-xl">
                   <input
                     type="text"
                     placeholder="Nome da cor"
                     value={color.name}
                     onChange={(e) => updateColor(index, 'name', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                     required
                   />
                   <input
                     type="color"
                     value={color.hex}
                     onChange={(e) => updateColor(index, 'hex', e.target.value)}
-                    className="w-12 h-10 border border-gray-200 rounded-lg cursor-pointer"
+                    className="w-12 h-10 bg-gray-600 border border-gray-500 rounded-lg cursor-pointer"
                   />
                   <input
                     type="url"
                     placeholder="URL da imagem"
                     value={color.image}
                     onChange={(e) => updateColor(index, 'image', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
                     required
                   />
                   {formData.colors.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeColor(index)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -909,13 +909,13 @@ function ProductForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-700 transition-colors font-medium"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all font-medium flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-medium flex items-center justify-center gap-2"
             >
               <Check className="w-5 h-5" />
               {product ? 'Atualizar' : 'Adicionar'}
