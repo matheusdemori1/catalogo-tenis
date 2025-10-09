@@ -32,9 +32,13 @@ const categoryNames = {
 }
 
 export default function Home() {
-  const [products, setProducts] = useProducts()
+  const { products, setProducts, addProduct, updateProduct, deleteProduct, loading, error } = useProducts()
   const [siteConfig, setSiteConfig] = useSiteConfig()
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
+  
+  // Garantir que products seja sempre um array
+  const safeProducts = Array.isArray(products) ? products : []
+  
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(safeProducts)
   const [selectedCategory, setSelectedCategory] = useState<'all' | Product['category']>('all')
   const [selectedBrand, setSelectedBrand] = useState<'all' | string>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -46,12 +50,14 @@ export default function Home() {
   const [showSiteConfig, setShowSiteConfig] = useState(false)
   const [imageModal, setImageModal] = useState<{ src: string; alt: string } | null>(null)
 
-  // Obter marcas únicas dos produtos
-  const uniqueBrands = Array.from(new Set(products.map(p => p.brand))).sort()
+  // Obter marcas únicas dos produtos - garantir que products seja array
+  const uniqueBrands = Array.from(new Set(safeProducts.map(p => p.brand))).sort()
 
   // Filtrar produtos
   useEffect(() => {
-    let filtered = products
+    // Garantir que products seja sempre um array
+    const currentProducts = Array.isArray(products) ? products : []
+    let filtered = currentProducts
     
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(product => product.category === selectedCategory)
@@ -87,11 +93,14 @@ export default function Home() {
   }
 
   const selectColor = (productId: string, colorId: string) => {
-    setProducts(prev => prev.map(product => 
-      product.id === productId 
-        ? { ...product, selectedColorId: colorId }
-        : product
-    ))
+    setProducts(prev => {
+      const currentProducts = Array.isArray(prev) ? prev : []
+      return currentProducts.map(product => 
+        product.id === productId 
+          ? { ...product, selectedColorId: colorId }
+          : product
+      )
+    })
   }
 
   const getWhatsAppMessage = (product: Product) => {
@@ -105,7 +114,7 @@ export default function Home() {
     window.open(`https://wa.me/${siteConfig.whatsappNumber}?text=${message}`, '_blank')
   }
 
-  const deleteProduct = async (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     console.log('🗑️ Iniciando exclusão do produto:', id)
     
     if (!confirm('Tem certeza que deseja excluir este produto?')) {
@@ -114,15 +123,15 @@ export default function Home() {
     }
 
     try {
-      console.log('🔄 Removendo produto da lista...')
-      setProducts(prev => {
-        const filtered = prev.filter(p => p.id !== id)
-        console.log('✅ Produto removido! Produtos restantes:', filtered.length)
-        console.log('📋 Lista atualizada:', filtered.map(p => ({ id: p.id, name: p.name })))
-        return filtered
-      })
+      console.log('🔄 Excluindo produto via API...')
+      const success = await deleteProduct(id)
       
-      console.log('🎉 Exclusão concluída com sucesso!')
+      if (success) {
+        console.log('✅ Produto excluído com sucesso!')
+      } else {
+        console.log('❌ Falha ao excluir produto')
+        alert('Erro ao excluir produto. Tente novamente.')
+      }
     } catch (error) {
       console.error('❌ Erro ao excluir produto:', error)
       alert('Erro ao excluir produto. Tente novamente.')
@@ -130,36 +139,49 @@ export default function Home() {
   }
 
   const deleteColor = (productId: string, colorId: string) => {
-    const product = products.find(p => p.id === productId)
+    const safeProducts = Array.isArray(products) ? products : []
+    const product = safeProducts.find(p => p.id === productId)
     if (product && product.colors.length <= 1) {
       alert('Não é possível excluir a única cor do produto. Exclua o produto inteiro se necessário.')
       return
     }
     
     if (confirm('Tem certeza que deseja excluir esta cor?')) {
-      setProducts(prev => prev.map(product => {
-        if (product.id === productId) {
-          const newColors = product.colors.filter(c => c.id !== colorId)
-          return {
-            ...product,
-            colors: newColors,
-            selectedColorId: product.selectedColorId === colorId ? newColors[0]?.id || '' : product.selectedColorId
+      setProducts(prev => {
+        const currentProducts = Array.isArray(prev) ? prev : []
+        return currentProducts.map(product => {
+          if (product.id === productId) {
+            const newColors = product.colors.filter(c => c.id !== colorId)
+            return {
+              ...product,
+              colors: newColors,
+              selectedColorId: product.selectedColorId === colorId ? newColors[0]?.id || '' : product.selectedColorId
+            }
           }
-        }
-        return product
-      }))
+          return product
+        })
+      })
     }
   }
 
-  const addProduct = (newProduct: Omit<Product, 'id'>) => {
-    const id = Date.now().toString()
-    setProducts(prev => [...prev, { ...newProduct, id }])
-    setShowAddProduct(false)
+  const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
+    try {
+      await addProduct(newProduct)
+      setShowAddProduct(false)
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error)
+      alert('Erro ao adicionar produto. Tente novamente.')
+    }
   }
 
-  const updateProduct = (updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p))
-    setEditingProduct(null)
+  const handleUpdateProduct = async (updatedProduct: Product) => {
+    try {
+      await updateProduct(updatedProduct.id, updatedProduct)
+      setEditingProduct(null)
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error)
+      alert('Erro ao atualizar produto. Tente novamente.')
+    }
   }
 
   const openImageModal = (src: string, alt: string) => {
@@ -168,6 +190,33 @@ export default function Home() {
 
   const closeImageModal = () => {
     setImageModal(null)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando produtos...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -364,7 +413,7 @@ export default function Home() {
                           e.preventDefault()
                           e.stopPropagation()
                           console.log('🖱️ Clique no botão deletar capturado para produto:', product.id, product.name)
-                          deleteProduct(product.id)
+                          handleDeleteProduct(product.id)
                         }}
                         className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                         title="Excluir produto"
@@ -521,7 +570,7 @@ export default function Home() {
       {(showAddProduct || editingProduct) && (
         <ProductForm
           product={editingProduct}
-          onSave={editingProduct ? updateProduct : addProduct}
+          onSave={editingProduct ? handleUpdateProduct : handleAddProduct}
           onClose={() => {
             setShowAddProduct(false)
             setEditingProduct(null)

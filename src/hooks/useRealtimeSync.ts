@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { ProductService, Product } from '@/lib/productService'
 
-// Hook para sincronização em tempo real entre abas
+// Hook para sincronização em tempo real entre abas (mantido para configurações)
 export function useRealtimeSync<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue)
 
@@ -47,7 +48,7 @@ export function useRealtimeSync<T>(key: string, initialValue: T) {
   return [value, updateValue] as const
 }
 
-// Hook para configurações do site
+// Hook para configurações do site (mantém localStorage)
 export function useSiteConfig() {
   const [config, setConfig] = useRealtimeSync('novita-site-config', {
     siteName: 'Novita',
@@ -63,9 +64,14 @@ export function useSiteConfig() {
   return [config, setConfig] as const
 }
 
-// Hook para produtos com sincronização
+// Hook para produtos com integração à API
 export function useProducts() {
-  const initialProducts = [
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Produtos iniciais como fallback
+  const initialProducts: Product[] = [
     {
       id: '1',
       name: 'Air Max 270',
@@ -280,5 +286,139 @@ export function useProducts() {
     }
   ]
 
-  return useRealtimeSync('novita-products', initialProducts)
+  // Carregar produtos da API
+  const loadProducts = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('🔄 Carregando produtos da API...')
+      
+      const apiProducts = await ProductService.getAll()
+      console.log('📦 Produtos recebidos da API:', apiProducts)
+      
+      if (Array.isArray(apiProducts) && apiProducts.length > 0) {
+        console.log('✅ Usando produtos da API')
+        setProducts(apiProducts)
+      } else {
+        console.log('⚠️ API retornou array vazio, usando produtos iniciais')
+        setProducts(initialProducts)
+      }
+    } catch (err) {
+      console.error('❌ Erro ao carregar produtos:', err)
+      setError('Erro ao carregar produtos')
+      // Em caso de erro, usar produtos iniciais
+      console.log('🔄 Usando produtos iniciais como fallback')
+      setProducts(initialProducts)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Carregar produtos na inicialização
+  useEffect(() => {
+    loadProducts()
+  }, [])
+
+  // Função para atualizar produtos (com sincronização com API)
+  const updateProducts = async (newProducts: Product[] | ((prev: Product[]) => Product[])) => {
+    const currentProducts = Array.isArray(products) ? products : []
+    const updatedProducts = typeof newProducts === 'function' 
+      ? newProducts(currentProducts)
+      : newProducts
+    
+    // Garantir que sempre seja um array
+    const safeProducts = Array.isArray(updatedProducts) ? updatedProducts : []
+    setProducts(safeProducts)
+    
+    // Disparar evento para sincronização entre abas
+    window.dispatchEvent(new CustomEvent('products-updated', { 
+      detail: safeProducts 
+    }))
+  }
+
+  // Função para adicionar produto
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    try {
+      console.log('➕ Adicionando produto:', product)
+      const createdProduct = await ProductService.create(product)
+      if (createdProduct) {
+        console.log('✅ Produto criado:', createdProduct)
+        setProducts(prev => {
+          const currentProducts = Array.isArray(prev) ? prev : []
+          return [...currentProducts, createdProduct]
+        })
+        return createdProduct
+      }
+    } catch (error) {
+      console.error('❌ Erro ao adicionar produto:', error)
+      throw error
+    }
+  }
+
+  // Função para atualizar produto
+  const updateProduct = async (id: string, product: Partial<Product>) => {
+    try {
+      console.log('✏️ Atualizando produto:', id, product)
+      const updatedProduct = await ProductService.update(id, product)
+      if (updatedProduct) {
+        console.log('✅ Produto atualizado:', updatedProduct)
+        setProducts(prev => {
+          const currentProducts = Array.isArray(prev) ? prev : []
+          return currentProducts.map(p => p.id === id ? updatedProduct : p)
+        })
+        return updatedProduct
+      }
+    } catch (error) {
+      console.error('❌ Erro ao atualizar produto:', error)
+      throw error
+    }
+  }
+
+  // Função para excluir produto
+  const deleteProduct = async (id: string) => {
+    try {
+      console.log('🗑️ Excluindo produto:', id)
+      const success = await ProductService.delete(id)
+      if (success) {
+        console.log('✅ Produto excluído com sucesso')
+        setProducts(prev => {
+          const currentProducts = Array.isArray(prev) ? prev : []
+          return currentProducts.filter(p => p.id !== id)
+        })
+        return true
+      }
+      console.log('❌ Falha ao excluir produto')
+      return false
+    } catch (error) {
+      console.error('❌ Erro ao excluir produto:', error)
+      throw error
+    }
+  }
+
+  // Listener para sincronização entre abas
+  useEffect(() => {
+    const handleProductsUpdate = (e: CustomEvent) => {
+      const newProducts = e.detail
+      if (Array.isArray(newProducts)) {
+        setProducts(newProducts)
+      }
+    }
+
+    window.addEventListener('products-updated', handleProductsUpdate as EventListener)
+    return () => window.removeEventListener('products-updated', handleProductsUpdate as EventListener)
+  }, [])
+
+  // Garantir que products sempre seja um array
+  const safeProducts = Array.isArray(products) ? products : []
+
+  return {
+    products: safeProducts,
+    setProducts: updateProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    loading,
+    error,
+    refetch: loadProducts
+  }
 }

@@ -1,0 +1,246 @@
+import { DatabaseProduct } from './supabase'
+
+// Interface para o produto no frontend (compatível com o formato atual)
+export interface Product {
+  id: string
+  name: string
+  brand: string
+  category: 'tenis' | 'camiseta-time' | 'society' | 'chuteira' | 'bolsa'
+  price: number
+  rating: number
+  colors: Color[]
+  selectedColorId: string
+}
+
+export interface Color {
+  id: string
+  name: string
+  hex: string
+  image: string
+}
+
+// Serviço para comunicação com a API
+export class ProductService {
+  private static baseUrl = '/api/produtos'
+
+  // Converter produto do banco para formato do frontend
+  private static convertFromDatabase(dbProduct: DatabaseProduct): Product {
+    // Para manter compatibilidade, vamos criar cores baseadas na imagem principal
+    const colors: Color[] = [
+      {
+        id: `${dbProduct.id}-1`,
+        name: 'Principal',
+        hex: '#000000',
+        image: dbProduct.imagem_url
+      }
+    ]
+
+    // Mapear categoria do banco para formato do frontend
+    const categoryMap: Record<string, Product['category']> = {
+      'tenis': 'tenis',
+      'camiseta': 'camiseta-time',
+      'society': 'society',
+      'chuteira': 'chuteira',
+      'bolsa': 'bolsa'
+    }
+
+    const category = Array.isArray(dbProduct.categorias) ? dbProduct.categorias[0] : 'tenis'
+    const mappedCategory = categoryMap[category] || 'tenis'
+
+    return {
+      id: dbProduct.id,
+      name: dbProduct.nome,
+      brand: dbProduct.marca,
+      category: mappedCategory,
+      price: dbProduct.preco,
+      rating: 4.5, // Valor padrão por enquanto
+      colors,
+      selectedColorId: colors[0].id
+    }
+  }
+
+  // Converter produto do frontend para formato do banco
+  private static convertToDatabase(product: Partial<Product>): Partial<DatabaseProduct> {
+    const categoryMap: Record<Product['category'], string> = {
+      'tenis': 'tenis',
+      'camiseta-time': 'camiseta',
+      'society': 'society',
+      'chuteira': 'chuteira',
+      'bolsa': 'bolsa'
+    }
+
+    return {
+      nome: product.name,
+      marca: product.brand,
+      preco: product.price || 0,
+      descricao: `${product.name} da marca ${product.brand}`,
+      imagem_url: product.colors?.[0]?.image || '',
+      estoque: 100, // Valor padrão
+      categorias: product.category ? [categoryMap[product.category]] : ['tenis']
+    }
+  }
+
+  // GET /api/produtos - Buscar todos os produtos
+  static async getAll(): Promise<Product[]> {
+    try {
+      console.log('🌐 Fazendo requisição para:', this.baseUrl)
+      
+      const response = await fetch(this.baseUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store' // Evitar cache para sempre buscar dados atualizados
+      })
+      
+      console.log('📡 Resposta da API:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Erro na resposta:', errorText)
+        console.log('🔄 Retornando array vazio devido ao erro')
+        return []
+      }
+      
+      const data = await response.json()
+      console.log('📦 Dados recebidos da API:', data)
+      
+      // Garantir que data é sempre um array
+      if (!Array.isArray(data)) {
+        console.log('⚠️ Resposta da API não é um array:', typeof data)
+        return []
+      }
+      
+      console.log('🔄 Convertendo produtos:', data.length)
+      
+      // Converter produtos do banco para formato do frontend
+      const products = data.map((dbProduct: DatabaseProduct) => {
+        try {
+          return this.convertFromDatabase(dbProduct)
+        } catch (error) {
+          console.error('❌ Erro ao converter produto:', dbProduct, error)
+          return null
+        }
+      }).filter(Boolean) as Product[] // Remover produtos que falharam na conversão
+      
+      console.log('✅ Produtos convertidos:', products.length)
+      return products
+    } catch (error) {
+      console.error('❌ Erro ao buscar produtos:', error)
+      return []
+    }
+  }
+
+  // GET /api/produtos/[id] - Buscar produto específico
+  static async getById(id: string): Promise<Product | null> {
+    try {
+      console.log('🔍 Buscando produto por ID:', id)
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        cache: 'no-store'
+      })
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('❌ Produto não encontrado')
+          return null
+        }
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+      
+      const dbProduct: DatabaseProduct = await response.json()
+      console.log('✅ Produto encontrado:', dbProduct)
+      return this.convertFromDatabase(dbProduct)
+    } catch (error) {
+      console.error('❌ Erro ao buscar produto:', error)
+      return null
+    }
+  }
+
+  // POST /api/produtos - Criar novo produto
+  static async create(product: Omit<Product, 'id'>): Promise<Product | null> {
+    try {
+      console.log('➕ Criando produto:', product)
+      const dbProduct = this.convertToDatabase(product)
+      console.log('🔄 Dados para API:', dbProduct)
+      
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbProduct)
+      })
+      
+      console.log('📡 Resposta da criação:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Erro na criação:', errorText)
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+      
+      const createdProduct: DatabaseProduct = await response.json()
+      console.log('✅ Produto criado:', createdProduct)
+      return this.convertFromDatabase(createdProduct)
+    } catch (error) {
+      console.error('❌ Erro ao criar produto:', error)
+      throw error
+    }
+  }
+
+  // PUT /api/produtos/[id] - Atualizar produto
+  static async update(id: string, product: Partial<Product>): Promise<Product | null> {
+    try {
+      console.log('✏️ Atualizando produto:', id, product)
+      const dbProduct = this.convertToDatabase(product)
+      console.log('🔄 Dados para API:', dbProduct)
+      
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbProduct)
+      })
+      
+      console.log('📡 Resposta da atualização:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Erro na atualização:', errorText)
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+      
+      const updatedProduct: DatabaseProduct = await response.json()
+      console.log('✅ Produto atualizado:', updatedProduct)
+      return this.convertFromDatabase(updatedProduct)
+    } catch (error) {
+      console.error('❌ Erro ao atualizar produto:', error)
+      throw error
+    }
+  }
+
+  // DELETE /api/produtos/[id] - Excluir produto
+  static async delete(id: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Excluindo produto:', id)
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: 'DELETE'
+      })
+      
+      console.log('📡 Resposta da exclusão:', response.status)
+      
+      if (response.ok) {
+        console.log('✅ Produto excluído com sucesso')
+        return true
+      } else {
+        const errorText = await response.text()
+        console.error('❌ Erro na exclusão:', errorText)
+        return false
+      }
+    } catch (error) {
+      console.error('❌ Erro ao excluir produto:', error)
+      return false
+    }
+  }
+}
