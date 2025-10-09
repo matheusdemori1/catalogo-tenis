@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check } from 'lucide-react'
+import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag } from 'lucide-react'
+import { useProducts, useSiteConfig } from '@/hooks/useRealtimeSync'
 
 // Tipos de dados
 interface Color {
@@ -14,234 +15,13 @@ interface Color {
 interface Product {
   id: string
   name: string
-  brand: string // Mudança: agora aceita qualquer string
+  brand: string
   category: 'tenis' | 'camiseta-time' | 'society' | 'chuteira' | 'bolsa'
   price: number
   rating: number
   colors: Color[]
   selectedColorId: string
 }
-
-// Dados iniciais
-const initialProducts: Product[] = [
-  // Tênis
-  {
-    id: '1',
-    name: 'Air Max 270',
-    brand: 'Nike',
-    category: 'tenis',
-    price: 0,
-    rating: 4.8,
-    selectedColorId: '1-1',
-    colors: [
-      {
-        id: '1-1',
-        name: 'Preto/Branco',
-        hex: '#000000',
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop'
-      },
-      {
-        id: '1-2',
-        name: 'Branco/Azul',
-        hex: '#ffffff',
-        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop'
-      },
-      {
-        id: '1-3',
-        name: 'Vermelho',
-        hex: '#dc2626',
-        image: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Ultraboost 22',
-    brand: 'Adidas',
-    category: 'tenis',
-    price: 0,
-    rating: 4.9,
-    selectedColorId: '2-1',
-    colors: [
-      {
-        id: '2-1',
-        name: 'Preto',
-        hex: '#000000',
-        image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&h=400&fit=crop'
-      },
-      {
-        id: '2-2',
-        name: 'Branco',
-        hex: '#ffffff',
-        image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  // Camisetas de Time
-  {
-    id: '3',
-    name: 'Camisa Brasil 2024',
-    brand: 'Nike',
-    category: 'camiseta-time',
-    price: 0,
-    rating: 4.7,
-    selectedColorId: '3-1',
-    colors: [
-      {
-        id: '3-1',
-        name: 'Amarelo',
-        hex: '#FFD700',
-        image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop'
-      },
-      {
-        id: '3-2',
-        name: 'Azul',
-        hex: '#0066CC',
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  {
-    id: '4',
-    name: 'Camisa Argentina 2024',
-    brand: 'Adidas',
-    category: 'camiseta-time',
-    price: 0,
-    rating: 4.8,
-    selectedColorId: '4-1',
-    colors: [
-      {
-        id: '4-1',
-        name: 'Azul/Branco',
-        hex: '#87CEEB',
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  // Society
-  {
-    id: '5',
-    name: 'Camisa Society Premium',
-    brand: 'Nike',
-    category: 'society',
-    price: 0,
-    rating: 4.5,
-    selectedColorId: '5-1',
-    colors: [
-      {
-        id: '5-1',
-        name: 'Preto',
-        hex: '#000000',
-        image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=400&fit=crop'
-      },
-      {
-        id: '5-2',
-        name: 'Branco',
-        hex: '#ffffff',
-        image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  {
-    id: '6',
-    name: 'Camisa Society Clássica',
-    brand: 'Adidas',
-    category: 'society',
-    price: 0,
-    rating: 4.4,
-    selectedColorId: '6-1',
-    colors: [
-      {
-        id: '6-1',
-        name: 'Azul Marinho',
-        hex: '#000080',
-        image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  // Chuteiras
-  {
-    id: '7',
-    name: 'Mercurial Vapor 15',
-    brand: 'Nike',
-    category: 'chuteira',
-    price: 0,
-    rating: 4.9,
-    selectedColorId: '7-1',
-    colors: [
-      {
-        id: '7-1',
-        name: 'Verde/Preto',
-        hex: '#00FF00',
-        image: 'https://images.unsplash.com/photo-1511886929837-354d827aae26?w=400&h=400&fit=crop'
-      },
-      {
-        id: '7-2',
-        name: 'Laranja',
-        hex: '#FF4500',
-        image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  {
-    id: '8',
-    name: 'Predator Edge',
-    brand: 'Adidas',
-    category: 'chuteira',
-    price: 0,
-    rating: 4.8,
-    selectedColorId: '8-1',
-    colors: [
-      {
-        id: '8-1',
-        name: 'Preto/Vermelho',
-        hex: '#000000',
-        image: 'https://images.unsplash.com/photo-1511886929837-354d827aae26?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  // Bolsas
-  {
-    id: '9',
-    name: 'Mochila Brasília',
-    brand: 'Nike',
-    category: 'bolsa',
-    price: 0,
-    rating: 4.6,
-    selectedColorId: '9-1',
-    colors: [
-      {
-        id: '9-1',
-        name: 'Preto',
-        hex: '#000000',
-        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop'
-      },
-      {
-        id: '9-2',
-        name: 'Azul',
-        hex: '#0066CC',
-        image: 'https://images.unsplash.com/photo-1581605669-fcdf81165afa?w=400&h=400&fit=crop'
-      }
-    ]
-  },
-  {
-    id: '10',
-    name: 'Bolsa Esportiva Classic',
-    brand: 'Adidas',
-    category: 'bolsa',
-    price: 0,
-    rating: 4.5,
-    selectedColorId: '10-1',
-    colors: [
-      {
-        id: '10-1',
-        name: 'Cinza',
-        hex: '#808080',
-        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop'
-      }
-    ]
-  }
-]
 
 const categoryNames = {
   'tenis': 'Tênis',
@@ -252,8 +32,9 @@ const categoryNames = {
 }
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(initialProducts)
+  const [products, setProducts] = useProducts()
+  const [siteConfig, setSiteConfig] = useSiteConfig()
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [selectedCategory, setSelectedCategory] = useState<'all' | Product['category']>('all')
   const [selectedBrand, setSelectedBrand] = useState<'all' | string>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -262,24 +43,11 @@ export default function Home() {
   const [password, setPassword] = useState('')
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [showSiteConfig, setShowSiteConfig] = useState(false)
+  const [imageModal, setImageModal] = useState<{ src: string; alt: string } | null>(null)
 
   // Obter marcas únicas dos produtos
   const uniqueBrands = Array.from(new Set(products.map(p => p.brand))).sort()
-
-  // Carregar dados do localStorage
-  useEffect(() => {
-    const savedProducts = localStorage.getItem('novita-products')
-    if (savedProducts) {
-      const parsed = JSON.parse(savedProducts)
-      setProducts(parsed)
-      setFilteredProducts(parsed)
-    }
-  }, [])
-
-  // Salvar no localStorage
-  useEffect(() => {
-    localStorage.setItem('novita-products', JSON.stringify(products))
-  }, [products])
 
   // Filtrar produtos
   useEffect(() => {
@@ -334,12 +102,30 @@ export default function Home() {
 
   const openWhatsApp = (product: Product) => {
     const message = encodeURIComponent(getWhatsAppMessage(product))
-    window.open(`https://wa.me/5518981100463?text=${message}`, '_blank')
+    window.open(`https://wa.me/${siteConfig.whatsappNumber}?text=${message}`, '_blank')
   }
 
-  const deleteProduct = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este produto?')) {
-      setProducts(prev => prev.filter(p => p.id !== id))
+  const deleteProduct = async (id: string) => {
+    console.log('🗑️ Iniciando exclusão do produto:', id)
+    
+    if (!confirm('Tem certeza que deseja excluir este produto?')) {
+      console.log('❌ Exclusão cancelada pelo usuário')
+      return
+    }
+
+    try {
+      console.log('🔄 Removendo produto da lista...')
+      setProducts(prev => {
+        const filtered = prev.filter(p => p.id !== id)
+        console.log('✅ Produto removido! Produtos restantes:', filtered.length)
+        console.log('📋 Lista atualizada:', filtered.map(p => ({ id: p.id, name: p.name })))
+        return filtered
+      })
+      
+      console.log('🎉 Exclusão concluída com sucesso!')
+    } catch (error) {
+      console.error('❌ Erro ao excluir produto:', error)
+      alert('Erro ao excluir produto. Tente novamente.')
     }
   }
 
@@ -376,26 +162,57 @@ export default function Home() {
     setEditingProduct(null)
   }
 
+  const openImageModal = (src: string, alt: string) => {
+    setImageModal({ src, alt })
+  }
+
+  const closeImageModal = () => {
+    setImageModal(null)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-40">
+      {/* Header Melhorado */}
+      <header className="bg-white/90 backdrop-blur-md border-b border-blue-100/50 sticky top-0 z-40 shadow-lg shadow-blue-100/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                Novita
-              </h1>
-              <span className="text-sm text-gray-600 hidden sm:block">Seu catálogo esportivo online</span>
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center space-x-6">
+              {/* Logo Melhorada */}
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-cyan-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 transform rotate-3">
+                    <ShoppingBag className="w-6 h-6 text-white transform -rotate-3" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-2 h-2 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 bg-clip-text text-transparent">
+                    {siteConfig.siteName}
+                  </h1>
+                  <p className="text-sm text-gray-500 font-medium hidden sm:block">{siteConfig.siteDescription}</p>
+                </div>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
               {isAdmin ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-green-600 font-medium">Admin</span>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setShowSiteConfig(true)}
+                    className="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                    title="Configurações do Site"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-xl border border-green-200">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-700 font-semibold">Admin</span>
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="text-gray-600 hover:text-gray-800 transition-colors"
+                    className="text-gray-600 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-xl transition-all duration-200 font-medium"
                   >
                     Sair
                   </button>
@@ -403,9 +220,10 @@ export default function Home() {
               ) : (
                 <button
                   onClick={() => setShowLogin(true)}
-                  className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                  className="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 group"
+                  title="Login Administrativo"
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 </button>
               )}
             </div>
@@ -419,7 +237,7 @@ export default function Home() {
         <div className="relative mb-12 overflow-hidden rounded-3xl">
           <div className="absolute inset-0">
             <img
-              src="https://images.unsplash.com/photo-1556906781-9a412961c28c?w=1200&h=600&fit=crop"
+              src={siteConfig.heroImage}
               alt="Produtos esportivos"
               className="w-full h-full object-cover"
             />
@@ -428,11 +246,11 @@ export default function Home() {
           
           <div className="relative text-center py-20 px-6">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Encontre o produto
-              <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent"> perfeito</span>
+              {siteConfig.heroTitle.split(' ').slice(0, -1).join(' ')}
+              <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent"> {siteConfig.heroTitle.split(' ').slice(-1)}</span>
             </h2>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Explore nossa coleção completa de produtos esportivos com design moderno e qualidade garantida
+              {siteConfig.heroSubtitle}
             </p>
           </div>
         </div>
@@ -525,19 +343,31 @@ export default function Home() {
                   <img
                     src={selectedColor?.image}
                     alt={product.name}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                    onClick={() => openImageModal(selectedColor?.image || '', product.name)}
                   />
                   {isAdmin && (
                     <div className="absolute top-2 right-2 flex gap-1">
                       <button
-                        onClick={() => setEditingProduct(product)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setEditingProduct(product)
+                        }}
                         className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        title="Editar produto"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => deleteProduct(product.id)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          console.log('🖱️ Clique no botão deletar capturado para produto:', product.id, product.name)
+                          deleteProduct(product.id)
+                        }}
                         className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        title="Excluir produto"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -619,11 +449,30 @@ export default function Home() {
 
       {/* WhatsApp Float Button */}
       <button
-        onClick={() => window.open('https://wa.me/5518981100463?text=Olá! Gostaria de mais informações sobre os produtos da Novita.', '_blank')}
+        onClick={() => window.open(`https://wa.me/${siteConfig.whatsappNumber}?text=Olá! Gostaria de mais informações sobre os produtos da ${siteConfig.siteName}.`, '_blank')}
         className="fixed bottom-6 right-6 w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50"
       >
         <MessageCircle className="w-6 h-6" />
       </button>
+
+      {/* Image Modal */}
+      {imageModal && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-full">
+            <button
+              onClick={closeImageModal}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img
+              src={imageModal.src}
+              alt={imageModal.alt}
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Login Modal */}
       {showLogin && (
@@ -659,6 +508,15 @@ export default function Home() {
         </div>
       )}
 
+      {/* Site Configuration Modal */}
+      {showSiteConfig && (
+        <SiteConfigModal
+          config={siteConfig}
+          onSave={setSiteConfig}
+          onClose={() => setShowSiteConfig(false)}
+        />
+      )}
+
       {/* Add/Edit Product Modal */}
       {(showAddProduct || editingProduct) && (
         <ProductForm
@@ -670,6 +528,129 @@ export default function Home() {
           }}
         />
       )}
+    </div>
+  )
+}
+
+// Componente para configurações do site
+function SiteConfigModal({ 
+  config, 
+  onSave, 
+  onClose 
+}: { 
+  config: any
+  onSave: (config: any) => void
+  onClose: () => void 
+}) {
+  const [formData, setFormData] = useState(config)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(formData)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Settings className="w-6 h-6" />
+            Configurações do Site
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Site</label>
+              <input
+                type="text"
+                value={formData.siteName}
+                onChange={(e) => setFormData(prev => ({ ...prev, siteName: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+              <input
+                type="text"
+                value={formData.siteDescription}
+                onChange={(e) => setFormData(prev => ({ ...prev, siteDescription: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Título Hero</label>
+              <input
+                type="text"
+                value={formData.heroTitle}
+                onChange={(e) => setFormData(prev => ({ ...prev, heroTitle: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp (com código do país)</label>
+              <input
+                type="text"
+                value={formData.whatsappNumber}
+                onChange={(e) => setFormData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                placeholder="5518981100463"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subtítulo Hero</label>
+            <textarea
+              value={formData.heroSubtitle}
+              onChange={(e) => setFormData(prev => ({ ...prev, heroSubtitle: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Imagem Hero (URL)</label>
+            <input
+              type="url"
+              value={formData.heroImage}
+              onChange={(e) => setFormData(prev => ({ ...prev, heroImage: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all font-medium flex items-center justify-center gap-2"
+            >
+              <Check className="w-5 h-5" />
+              Salvar Configurações
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
