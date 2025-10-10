@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag } from 'lucide-react'
+import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useProducts, useSiteConfig } from '@/hooks/useRealtimeSync'
 
 // Tipos de dados
@@ -31,6 +31,30 @@ const categoryNames = {
   'bolsa': 'Bolsas'
 }
 
+// Imagens profissionais de esportes e tênis para o carrossel
+const heroImages = [
+  {
+    url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1200&h=600&fit=crop',
+    alt: 'Tênis esportivos modernos'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1200&h=600&fit=crop',
+    alt: 'Tênis de corrida profissionais'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=1200&h=600&fit=crop',
+    alt: 'Calçados esportivos premium'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=1200&h=600&fit=crop',
+    alt: 'Tênis de alta performance'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=600&fit=crop',
+    alt: 'Equipamentos esportivos'
+  }
+]
+
 export default function Home() {
   const { products, setProducts, addProduct, updateProduct, deleteProduct, loading, error } = useProducts()
   const [siteConfig, setSiteConfig] = useSiteConfig()
@@ -49,9 +73,21 @@ export default function Home() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [showSiteConfig, setShowSiteConfig] = useState(false)
   const [imageModal, setImageModal] = useState<{ src: string; alt: string } | null>(null)
+  
+  // Estado para o carrossel de imagens
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   // Obter marcas únicas dos produtos - garantir que products seja array
   const uniqueBrands = Array.from(new Set(safeProducts.map(p => p.brand))).sort()
+
+  // Carrossel automático de imagens
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length)
+    }, 4000) // Troca a cada 4 segundos
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Filtrar produtos
   useEffect(() => {
@@ -128,13 +164,15 @@ export default function Home() {
       
       if (success) {
         console.log('✅ Produto excluído com sucesso!')
+        // Forçar atualização da lista
+        window.location.reload()
       } else {
         console.log('❌ Falha ao excluir produto')
-        alert('Erro ao excluir produto. Tente novamente.')
+        alert('Erro ao excluir produto. Verifique sua conexão com o banco de dados.')
       }
     } catch (error) {
       console.error('❌ Erro ao excluir produto:', error)
-      alert('Erro ao excluir produto. Tente novamente.')
+      alert('Erro ao excluir produto. Verifique sua conexão com o banco de dados.')
     }
   }
 
@@ -166,21 +204,37 @@ export default function Home() {
 
   const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
     try {
-      await addProduct(newProduct)
-      setShowAddProduct(false)
+      console.log('➕ Adicionando produto:', newProduct)
+      const result = await addProduct(newProduct)
+      if (result) {
+        console.log('✅ Produto adicionado com sucesso')
+        setShowAddProduct(false)
+        // Forçar atualização da lista
+        window.location.reload()
+      } else {
+        throw new Error('Falha ao adicionar produto')
+      }
     } catch (error) {
-      console.error('Erro ao adicionar produto:', error)
-      alert('Erro ao adicionar produto. Tente novamente.')
+      console.error('❌ Erro ao adicionar produto:', error)
+      alert('Erro ao adicionar produto. Verifique sua conexão com o banco de dados.')
     }
   }
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
     try {
-      await updateProduct(updatedProduct.id, updatedProduct)
-      setEditingProduct(null)
+      console.log('✏️ Atualizando produto:', updatedProduct)
+      const result = await updateProduct(updatedProduct.id, updatedProduct)
+      if (result) {
+        console.log('✅ Produto atualizado com sucesso')
+        setEditingProduct(null)
+        // Forçar atualização da lista
+        window.location.reload()
+      } else {
+        throw new Error('Falha ao atualizar produto')
+      }
     } catch (error) {
-      console.error('Erro ao atualizar produto:', error)
-      alert('Erro ao atualizar produto. Tente novamente.')
+      console.error('❌ Erro ao atualizar produto:', error)
+      alert('Erro ao atualizar produto. Verifique sua conexão com o banco de dados.')
     }
   }
 
@@ -190,6 +244,15 @@ export default function Home() {
 
   const closeImageModal = () => {
     setImageModal(null)
+  }
+
+  // Navegação manual do carrossel
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % heroImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length)
   }
 
   if (loading) {
@@ -221,18 +284,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
-      {/* Header Melhorado */}
-      <header className="bg-black/90 backdrop-blur-md border-b border-gray-800/50 sticky top-0 z-40 shadow-lg shadow-black/20">
+      {/* Header Profissional */}
+      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800/50 sticky top-0 z-40 shadow-2xl shadow-black/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-6">
-              {/* Logo Melhorada */}
+              {/* Logo Premium */}
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-600 via-red-600 to-orange-700 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25 transform rotate-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/30 transform rotate-3 hover:rotate-6 transition-transform">
                     <ShoppingBag className="w-6 h-6 text-white transform -rotate-3" />
                   </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
                     <Sparkles className="w-2 h-2 text-white" />
                   </div>
                 </div>
@@ -282,25 +345,69 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        <div className="relative mb-12 overflow-hidden rounded-3xl">
-          <div className="absolute inset-0">
-            <img
-              src={siteConfig.heroImage}
-              alt="Produtos esportivos"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-gray-900/80 to-slate-900/70"></div>
+        {/* Hero Section com Carrossel */}
+        <div className="relative mb-12 overflow-hidden rounded-3xl group">
+          <div className="relative h-96 md:h-[500px]">
+            {/* Imagens do carrossel */}
+            {heroImages.map((image, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-opacity duration-1000 ${
+                  index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                <img
+                  src={image.url}
+                  alt={image.alt}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-gray-900/80 to-slate-900/70"></div>
+              </div>
+            ))}
+            
+            {/* Controles do carrossel */}
+            <button
+              onClick={prevImage}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            
+            {/* Indicadores */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+              {heroImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    index === currentImageIndex 
+                      ? 'bg-orange-500 scale-125' 
+                      : 'bg-white/50 hover:bg-white/70'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
           
-          <div className="relative text-center py-20 px-6">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              {siteConfig.heroTitle.split(' ').slice(0, -1).join(' ')}
-              <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent"> {siteConfig.heroTitle.split(' ').slice(-1)}</span>
-            </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              {siteConfig.heroSubtitle}
-            </p>
+          {/* Conteúdo sobreposto */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center px-6">
+              <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 uppercase tracking-wider">
+                ENCONTRE SEU
+                <span className="block bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+                  ESTILO PERFEITO
+                </span>
+              </h2>
+              <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto font-medium">
+                Descubra nossa coleção premium de produtos esportivos com qualidade internacional
+              </p>
+            </div>
           </div>
         </div>
 
@@ -637,17 +744,6 @@ function SiteConfigModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Título Hero</label>
-              <input
-                type="text"
-                value={formData.heroTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, heroTitle: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
-                required
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">WhatsApp (com código do país)</label>
               <input
                 type="text"
@@ -658,28 +754,6 @@ function SiteConfigModal({
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Subtítulo Hero</label>
-            <textarea
-              value={formData.heroSubtitle}
-              onChange={(e) => setFormData(prev => ({ ...prev, heroSubtitle: e.target.value }))}
-              rows={3}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Imagem Hero (URL)</label>
-            <input
-              type="url"
-              value={formData.heroImage}
-              onChange={(e) => setFormData(prev => ({ ...prev, heroImage: e.target.value }))}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
-              required
-            />
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -767,12 +841,25 @@ function ProductForm({
       return
     }
     
+    // Validar URLs das imagens
+    for (const color of formData.colors) {
+      if (!color.image.trim()) {
+        alert(`Adicione uma URL de imagem para a cor "${color.name}"`)
+        return
+      }
+      if (!color.name.trim()) {
+        alert('Todas as cores devem ter um nome')
+        return
+      }
+    }
+    
     const productData = {
       ...formData,
       selectedColorId: formData.colors[0].id,
       ...(product && { id: product.id })
     }
     
+    console.log('📝 Enviando dados do produto:', productData)
     onSave(productData)
   }
 
@@ -791,7 +878,7 @@ function ProductForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
               <input
                 type="text"
                 value={formData.name}
@@ -802,7 +889,7 @@ function ProductForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Marca</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
               <input
                 type="text"
                 value={formData.brand}
@@ -827,18 +914,6 @@ function ProductForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Preço (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
-                required
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Avaliação</label>
               <input
                 type="number"
@@ -855,7 +930,7 @@ function ProductForm({
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <label className="block text-sm font-medium text-gray-300">Cores</label>
+              <label className="block text-sm font-medium text-gray-300">Cores *</label>
               <button
                 type="button"
                 onClick={addColor}
@@ -871,7 +946,7 @@ function ProductForm({
                 <div key={color.id} className="flex gap-3 items-center p-3 bg-gray-700 border border-gray-600 rounded-xl">
                   <input
                     type="text"
-                    placeholder="Nome da cor"
+                    placeholder="Nome da cor *"
                     value={color.name}
                     onChange={(e) => updateColor(index, 'name', e.target.value)}
                     className="flex-1 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
@@ -885,7 +960,7 @@ function ProductForm({
                   />
                   <input
                     type="url"
-                    placeholder="URL da imagem"
+                    placeholder="URL da imagem *"
                     value={color.image}
                     onChange={(e) => updateColor(index, 'image', e.target.value)}
                     className="flex-1 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white"
