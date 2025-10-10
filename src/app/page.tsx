@@ -206,17 +206,18 @@ export default function Home() {
     window.open(`https://wa.me/${siteConfig.whatsappNumber}?text=${message}`, '_blank')
   }
 
-  const handleDeleteProduct = async (id: string) => {
-    console.log('🗑️ Iniciando exclusão do produto:', id)
+  // CORREÇÃO: Função para deletar produto usando o ID UUID correto
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    console.log('🗑️ Iniciando exclusão do produto:', { id: productId, name: productName })
     
-    if (!confirm('Tem certeza que deseja excluir este produto?')) {
+    if (!confirm(`Tem certeza que deseja excluir o produto "${productName}"?`)) {
       console.log('❌ Exclusão cancelada pelo usuário')
       return
     }
 
     try {
-      console.log('🔄 Excluindo produto via API...')
-      const success = await deleteProduct(id)
+      console.log('🔄 Excluindo produto via API com ID UUID:', productId)
+      const success = await deleteProduct(productId)
       
       if (success) {
         console.log('✅ Produto excluído com sucesso!')
@@ -593,7 +594,7 @@ export default function Home() {
                           e.preventDefault()
                           e.stopPropagation()
                           console.log('🖱️ Clique no botão deletar capturado para produto:', product.id, product.name)
-                          handleDeleteProduct(product.id)
+                          handleDeleteProduct(product.id, product.name)
                         }}
                         className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                         title="Excluir produto"
