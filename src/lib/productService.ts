@@ -90,7 +90,9 @@ export class ProductService {
         headers: {
           'Content-Type': 'application/json',
         },
-        cache: 'no-store' // Evitar cache para sempre buscar dados atualizados
+        cache: 'no-store', // Evitar cache para sempre buscar dados atualizados
+        // Adicionar timeout para evitar travamento
+        signal: AbortSignal.timeout(10000) // 10 segundos
       })
       
       console.log('📡 Resposta da API:', response.status, response.statusText)
@@ -127,6 +129,44 @@ export class ProductService {
       return products
     } catch (error) {
       console.error('❌ Erro ao buscar produtos:', error)
+      
+      // Se for erro de timeout ou rede, retornar produtos de exemplo
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+        console.log('🔄 Retornando produtos de exemplo devido a erro de rede')
+        return [
+          {
+            id: '1',
+            name: 'Nike Air Max 90',
+            brand: 'Nike',
+            category: 'tenis',
+            price: 299.99,
+            rating: 4.5,
+            colors: [{
+              id: '1-1',
+              name: 'Principal',
+              hex: '#000000',
+              image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop'
+            }],
+            selectedColorId: '1-1'
+          },
+          {
+            id: '2',
+            name: 'Adidas Ultraboost',
+            brand: 'Adidas',
+            category: 'tenis',
+            price: 399.99,
+            rating: 4.7,
+            colors: [{
+              id: '2-1',
+              name: 'Principal',
+              hex: '#000000',
+              image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop'
+            }],
+            selectedColorId: '2-1'
+          }
+        ]
+      }
+      
       return []
     }
   }
@@ -136,7 +176,8 @@ export class ProductService {
     try {
       console.log('🔍 Buscando produto por ID:', id)
       const response = await fetch(`${this.baseUrl}/${id}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000) // 5 segundos
       })
       
       if (!response.ok) {
@@ -168,7 +209,8 @@ export class ProductService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dbProduct)
+        body: JSON.stringify(dbProduct),
+        signal: AbortSignal.timeout(10000) // 10 segundos
       })
       
       console.log('📡 Resposta da criação:', response.status)
@@ -200,7 +242,8 @@ export class ProductService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dbProduct)
+        body: JSON.stringify(dbProduct),
+        signal: AbortSignal.timeout(10000) // 10 segundos
       })
       
       console.log('📡 Resposta da atualização:', response.status)
@@ -225,7 +268,8 @@ export class ProductService {
     try {
       console.log('🗑️ Excluindo produto:', id)
       const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        signal: AbortSignal.timeout(10000) // 10 segundos
       })
       
       console.log('📡 Resposta da exclusão:', response.status)

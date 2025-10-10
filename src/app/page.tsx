@@ -60,7 +60,7 @@ export default function Home() {
   const [siteConfig, setSiteConfig] = useSiteConfig()
   
   // Garantir que products seja sempre um array
-  const safeProducts = Array.isArray(products) ? products : []
+  const safeProducts: Product[] = Array.isArray(products) ? products : []
   
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(safeProducts)
   const [selectedCategory, setSelectedCategory] = useState<'all' | Product['category']>('all')
@@ -92,7 +92,7 @@ export default function Home() {
   // Filtrar produtos
   useEffect(() => {
     // Garantir que products seja sempre um array
-    const currentProducts = Array.isArray(products) ? products : []
+    const currentProducts: Product[] = Array.isArray(products) ? products : []
     let filtered = currentProducts
     
     if (selectedCategory !== 'all') {
@@ -129,8 +129,8 @@ export default function Home() {
   }
 
   const selectColor = (productId: string, colorId: string) => {
-    setProducts(prev => {
-      const currentProducts = Array.isArray(prev) ? prev : []
+    setProducts((prev: Product[]) => {
+      const currentProducts: Product[] = Array.isArray(prev) ? prev : []
       return currentProducts.map(product => 
         product.id === productId 
           ? { ...product, selectedColorId: colorId }
@@ -177,7 +177,7 @@ export default function Home() {
   }
 
   const deleteColor = (productId: string, colorId: string) => {
-    const safeProducts = Array.isArray(products) ? products : []
+    const safeProducts: Product[] = Array.isArray(products) ? products : []
     const product = safeProducts.find(p => p.id === productId)
     if (product && product.colors.length <= 1) {
       alert('Não é possível excluir a única cor do produto. Exclua o produto inteiro se necessário.')
@@ -185,8 +185,8 @@ export default function Home() {
     }
     
     if (confirm('Tem certeza que deseja excluir esta cor?')) {
-      setProducts(prev => {
-        const currentProducts = Array.isArray(prev) ? prev : []
+      setProducts((prev: Product[]) => {
+        const currentProducts: Product[] = Array.isArray(prev) ? prev : []
         return currentProducts.map(product => {
           if (product.id === productId) {
             const newColors = product.colors.filter(c => c.id !== colorId)
