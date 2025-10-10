@@ -1,4 +1,5 @@
 import { DatabaseProduct } from './supabase'
+import { supabase } from './supabase'
 
 // Interface para o produto no frontend (compatível com o formato atual)
 export interface Product {
@@ -22,6 +23,45 @@ export interface Color {
 // Serviço para comunicação com a API
 export class ProductService {
   private static baseUrl = '/api/produtos'
+
+  // Obter token de autenticação do usuário logado
+  private static async getAuthToken(): Promise<string | null> {
+    if (!supabase) {
+      console.log('⚠️ Supabase não configurado')
+      return null
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        console.log('🔐 Token de autenticação obtido')
+        return session.access_token
+      } else {
+        console.log('⚠️ Usuário não autenticado')
+        return null
+      }
+    } catch (error) {
+      console.error('❌ Erro ao obter token:', error)
+      return null
+    }
+  }
+
+  // Criar headers com autenticação
+  private static async getAuthHeaders(): Promise<HeadersInit> {
+    const token = await this.getAuthToken()
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+      console.log('🔐 Header de autenticação adicionado')
+    } else {
+      console.log('⚠️ Requisição sem autenticação')
+    }
+
+    return headers
+  }
 
   // Converter produto do banco para formato do frontend
   private static convertFromDatabase(dbProduct: DatabaseProduct): Product {
@@ -204,11 +244,11 @@ export class ProductService {
       const dbProduct = this.convertToDatabase(product)
       console.log('🔄 Dados para API:', dbProduct)
       
+      const headers = await this.getAuthHeaders()
+      
       const response = await fetch(this.baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(dbProduct),
         signal: AbortSignal.timeout(10000) // 10 segundos
       })
@@ -237,11 +277,11 @@ export class ProductService {
       const dbProduct = this.convertToDatabase(product)
       console.log('🔄 Dados para API:', dbProduct)
       
+      const headers = await this.getAuthHeaders()
+      
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(dbProduct),
         signal: AbortSignal.timeout(10000) // 10 segundos
       })
@@ -267,8 +307,12 @@ export class ProductService {
   static async delete(id: string): Promise<boolean> {
     try {
       console.log('🗑️ Excluindo produto:', id)
+      
+      const headers = await this.getAuthHeaders()
+      
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'DELETE',
+        headers,
         signal: AbortSignal.timeout(10000) // 10 segundos
       })
       

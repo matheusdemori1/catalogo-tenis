@@ -5,32 +5,44 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Criar clientes Supabase
-let supabase: any = null
-let supabaseAdmin: any = null
+// Função para criar cliente Supabase autenticado
+function createAuthenticatedClient(authToken?: string) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null
+  }
 
-if (supabaseUrl && supabaseAnonKey) {
   try {
     const { createClient } = require('@supabase/supabase-js')
     
-    // Cliente público
-    supabase = createClient(supabaseUrl, supabaseAnonKey)
-    
-    // Cliente administrativo (usa service key se disponível, senão usa anon key)
+    // Se temos service key, usar ela (para operações administrativas)
     if (supabaseServiceKey) {
       console.log('🔑 Usando service role key para operações administrativas')
-      supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      return createClient(supabaseUrl, supabaseServiceKey, {
         auth: {
           autoRefreshToken: false,
           persistSession: false
         }
       })
-    } else {
-      console.log('⚠️ Service role key não encontrada, usando anon key')
-      supabaseAdmin = supabase
     }
+    
+    // Se temos token de autenticação do usuário, usar ele
+    if (authToken) {
+      console.log('🔐 Usando token de autenticação do usuário')
+      const client = createClient(supabaseUrl, supabaseAnonKey)
+      // Definir a sessão com o token fornecido
+      client.auth.setSession({
+        access_token: authToken,
+        refresh_token: ''
+      })
+      return client
+    }
+    
+    // Fallback para cliente público
+    console.log('⚠️ Usando cliente público (sem autenticação)')
+    return createClient(supabaseUrl, supabaseAnonKey)
   } catch (error) {
     console.error('❌ Erro ao criar cliente Supabase:', error)
+    return null
   }
 }
 
@@ -70,6 +82,8 @@ export async function GET(
   try {
     const { id } = params
     console.log('📡 GET /api/produtos/[id] - Buscando produto:', id)
+    
+    const supabase = createAuthenticatedClient()
     
     if (supabase) {
       const { data: produto, error } = await supabase
@@ -115,9 +129,15 @@ export async function PUT(
     const body = await request.json()
     console.log('📦 Dados recebidos para atualização:', body)
     
+    // Extrair token de autenticação do header
+    const authToken = request.headers.get('authorization')?.replace('Bearer ', '')
+    console.log('🔐 Token de autenticação:', authToken ? 'Presente' : 'Ausente')
+    
     const { nome, marca, preco, descricao, imagem_url, estoque, categorias } = body
 
-    if (supabaseAdmin) {
+    const supabase = createAuthenticatedClient(authToken)
+    
+    if (supabase) {
       const updateData: any = {}
       if (nome !== undefined) updateData.nome = nome
       if (marca !== undefined) updateData.marca = marca
@@ -131,7 +151,7 @@ export async function PUT(
 
       console.log('🔄 Tentando atualizar com dados:', updateData)
 
-      const { data: produto, error } = await supabaseAdmin
+      const { data: produto, error } = await supabase
         .from('produtos')
         .update(updateData)
         .eq('id', id)
@@ -194,10 +214,16 @@ export async function DELETE(
     const { id } = params
     console.log('📡 DELETE /api/produtos/[id] - Excluindo produto:', id)
     
-    if (supabaseAdmin) {
+    // Extrair token de autenticação do header
+    const authToken = request.headers.get('authorization')?.replace('Bearer ', '')
+    console.log('🔐 Token de autenticação:', authToken ? 'Presente' : 'Ausente')
+    
+    const supabase = createAuthenticatedClient(authToken)
+    
+    if (supabase) {
       console.log('🔄 Tentando excluir produto com ID:', id)
 
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('produtos')
         .delete()
         .eq('id', id)

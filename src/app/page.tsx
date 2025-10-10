@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight, Mail, Lock } from 'lucide-react'
+import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight, Mail, Lock, Zap } from 'lucide-react'
 import { useProducts, useSiteConfig } from '@/hooks/useRealtimeSync'
 import { supabase } from '@/lib/supabase'
 
@@ -345,18 +345,35 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-6">
-              {/* Logo Premium */}
+              {/* Nova Logo Premium */}
               <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/30 transform rotate-3 hover:rotate-6 transition-transform">
-                    <ShoppingBag className="w-6 h-6 text-white transform -rotate-3" />
+                <div className="relative group">
+                  {/* Logo principal com design moderno */}
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-orange-500/40 transform hover:scale-105 transition-all duration-300 relative overflow-hidden">
+                    {/* Efeito de brilho interno */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-2xl"></div>
+                    
+                    {/* Ícone principal */}
+                    <div className="relative z-10 flex items-center justify-center">
+                      <Zap className="w-7 h-7 text-white transform rotate-12" />
+                    </div>
+                    
+                    {/* Partículas decorativas */}
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
+                    <div className="absolute bottom-2 left-2 w-1.5 h-1.5 bg-white/60 rounded-full animate-ping"></div>
                   </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
-                    <Sparkles className="w-2 h-2 text-white" />
+                  
+                  {/* Badge de destaque */}
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 animate-bounce">
+                    <Sparkles className="w-3 h-3 text-white" />
                   </div>
+                  
+                  {/* Anel de energia */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-orange-400/30 animate-pulse group-hover:border-orange-400/60 transition-colors"></div>
                 </div>
+                
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-orange-500 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
                     {siteConfig.siteName}
                   </h1>
                   <p className="text-sm text-gray-400 font-medium hidden sm:block">{siteConfig.siteDescription}</p>
