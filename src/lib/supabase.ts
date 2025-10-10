@@ -11,7 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Cliente público (para leitura)
-export const supabase = supabaseUrl && supabaseAnonKey 
+export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
@@ -23,9 +23,33 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey
         persistSession: false
       }
     })
-  : (supabaseUrl && supabaseAnonKey 
+  : (supabaseUrl && supabaseAnonKey
       ? createClient(supabaseUrl, supabaseAnonKey)
       : null)
+
+// Função para criar cliente autenticado (usado nas APIs)
+export function createAuthenticatedClient(authToken?: string) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('⚠️ Variáveis do Supabase não configuradas')
+    return null
+  }
+
+  const client = createClient(supabaseUrl, supabaseAnonKey)
+
+  // Se há token de autenticação, configurar o cliente
+  if (authToken) {
+    client.auth.setSession({
+      access_token: authToken,
+      refresh_token: '',
+      expires_in: 3600,
+      expires_at: Date.now() + 3600000,
+      token_type: 'bearer',
+      user: null
+    })
+  }
+
+  return client
+}
 
 // Interface para o produto no banco de dados
 export interface DatabaseProduct {
@@ -43,7 +67,7 @@ export interface DatabaseProduct {
 
 // SQL para criar a tabela produtos (execute no painel do Supabase)
 export const createProductsTableSQL = `
--- Criar tabela produtos
+// Criar tabela produtos
 CREATE TABLE IF NOT EXISTS produtos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nome VARCHAR(255) NOT NULL,
@@ -57,21 +81,21 @@ CREATE TABLE IF NOT EXISTS produtos (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Criar índices para melhor performance
+// Criar índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_produtos_marca ON produtos(marca);
 CREATE INDEX IF NOT EXISTS idx_produtos_categorias ON produtos USING GIN(categorias);
 CREATE INDEX IF NOT EXISTS idx_produtos_created_at ON produtos(created_at);
 
--- Habilitar RLS (Row Level Security)
+// Habilitar RLS (Row Level Security)
 ALTER TABLE produtos ENABLE ROW LEVEL SECURITY;
 
--- Remover políticas existentes se houver
+// Remover políticas existentes se houver
 DROP POLICY IF EXISTS "Permitir leitura pública de produtos" ON produtos;
 DROP POLICY IF EXISTS "Permitir inserção pública de produtos" ON produtos;
 DROP POLICY IF EXISTS "Permitir atualização pública de produtos" ON produtos;
 DROP POLICY IF EXISTS "Permitir exclusão pública de produtos" ON produtos;
 
--- Criar políticas de segurança
+// Criar políticas de segurança
 CREATE POLICY "Permitir leitura pública de produtos" ON produtos
   FOR SELECT USING (true);
 

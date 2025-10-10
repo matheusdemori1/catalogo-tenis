@@ -1,122 +1,57 @@
-import { DatabaseProduct } from './supabase'
-import { supabase } from './supabase'
+// Tipos para o banco de dados
+interface DatabaseProduct {
+  id: string
+  nome: string
+  preco: number
+  descricao?: string
+  categoria?: string
+  imagem?: string
+  estoque?: number
+  created_at?: string
+  updated_at?: string
+}
 
-// Interface para o produto no frontend (compatível com o formato atual)
-export interface Product {
+// Tipos para o frontend
+interface Product {
   id: string
   name: string
-  brand: string
-  category: 'tenis' | 'camiseta-time' | 'society' | 'chuteira' | 'bolsa'
   price: number
-  rating: number
-  colors: Color[]
-  selectedColorId: string
+  description?: string
+  category?: string
+  image?: string
+  stock?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
-export interface Color {
-  id: string
-  name: string
-  hex: string
-  image: string
-}
-
-// Serviço para comunicação com a API
 export class ProductService {
   private static baseUrl = '/api/produtos'
 
-  // Obter token de autenticação do usuário logado
-  private static async getAuthToken(): Promise<string | null> {
-    if (!supabase) {
-      console.log('⚠️ Supabase não configurado')
-      return null
-    }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        console.log('🔐 Token de autenticação obtido')
-        return session.access_token
-      } else {
-        console.log('⚠️ Usuário não autenticado')
-        return null
-      }
-    } catch (error) {
-      console.error('❌ Erro ao obter token:', error)
-      return null
-    }
-  }
-
-  // Criar headers com autenticação
-  private static async getAuthHeaders(): Promise<HeadersInit> {
-    const token = await this.getAuthToken()
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    }
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-      console.log('🔐 Header de autenticação adicionado')
-    } else {
-      console.log('⚠️ Requisição sem autenticação')
-    }
-
-    return headers
-  }
-
   // Converter produto do banco para formato do frontend
   private static convertFromDatabase(dbProduct: DatabaseProduct): Product {
-    // Para manter compatibilidade, vamos criar cores baseadas na imagem principal
-    const colors: Color[] = [
-      {
-        id: `${dbProduct.id}-1`,
-        name: 'Principal',
-        hex: '#000000',
-        image: dbProduct.imagem_url
-      }
-    ]
-
-    // Mapear categoria do banco para formato do frontend
-    const categoryMap: Record<string, Product['category']> = {
-      'tenis': 'tenis',
-      'camiseta': 'camiseta-time',
-      'society': 'society',
-      'chuteira': 'chuteira',
-      'bolsa': 'bolsa'
-    }
-
-    const category = Array.isArray(dbProduct.categorias) ? dbProduct.categorias[0] : 'tenis'
-    const mappedCategory = categoryMap[category] || 'tenis'
-
     return {
       id: dbProduct.id,
       name: dbProduct.nome,
-      brand: dbProduct.marca,
-      category: mappedCategory,
       price: dbProduct.preco,
-      rating: 4.5, // Valor padrão por enquanto
-      colors,
-      selectedColorId: colors[0].id
+      description: dbProduct.descricao,
+      category: dbProduct.categoria,
+      image: dbProduct.imagem,
+      stock: dbProduct.estoque,
+      createdAt: dbProduct.created_at,
+      updatedAt: dbProduct.updated_at
     }
   }
 
   // Converter produto do frontend para formato do banco
   private static convertToDatabase(product: Partial<Product>): Partial<DatabaseProduct> {
-    const categoryMap: Record<Product['category'], string> = {
-      'tenis': 'tenis',
-      'camiseta-time': 'camiseta',
-      'society': 'society',
-      'chuteira': 'chuteira',
-      'bolsa': 'bolsa'
-    }
-
     return {
+      id: product.id,
       nome: product.name,
-      marca: product.brand,
-      preco: product.price || 0,
-      descricao: `${product.name} da marca ${product.brand}`,
-      imagem_url: product.colors?.[0]?.image || '',
-      estoque: 100, // Valor padrão
-      categorias: product.category ? [categoryMap[product.category]] : ['tenis']
+      preco: product.price,
+      descricao: product.description,
+      categoria: product.category,
+      imagem: product.image,
+      estoque: product.stock
     }
   }
 
@@ -140,8 +75,7 @@ export class ProductService {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('❌ Erro na resposta:', errorText)
-        console.log('🔄 Retornando array vazio devido ao erro')
-        return []
+        throw new Error(`Erro na API: ${response.status}`)
       }
       
       const data = await response.json()
@@ -169,100 +103,61 @@ export class ProductService {
       return products
     } catch (error) {
       console.error('❌ Erro ao buscar produtos:', error)
-      
-      // Se for erro de timeout ou rede, retornar produtos de exemplo
-      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
-        console.log('🔄 Retornando produtos de exemplo devido a erro de rede')
-        return [
-          {
-            id: '1',
-            name: 'Nike Air Max 90',
-            brand: 'Nike',
-            category: 'tenis',
-            price: 299.99,
-            rating: 4.5,
-            colors: [{
-              id: '1-1',
-              name: 'Principal',
-              hex: '#000000',
-              image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop'
-            }],
-            selectedColorId: '1-1'
-          },
-          {
-            id: '2',
-            name: 'Adidas Ultraboost',
-            brand: 'Adidas',
-            category: 'tenis',
-            price: 399.99,
-            rating: 4.7,
-            colors: [{
-              id: '2-1',
-              name: 'Principal',
-              hex: '#000000',
-              image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop'
-            }],
-            selectedColorId: '2-1'
-          }
-        ]
-      }
-      
-      return []
+      // Não retornar fallback, lançar erro para que o componente mostre erro
+      throw error
     }
   }
 
-  // GET /api/produtos/[id] - Buscar produto específico
+  // GET /api/produtos/[id] - Buscar produto por ID
   static async getById(id: string): Promise<Product | null> {
     try {
-      console.log('🔍 Buscando produto por ID:', id)
+      console.log('🌐 Buscando produto por ID:', id)
+      
       const response = await fetch(`${this.baseUrl}/${id}`, {
-        cache: 'no-store',
-        signal: AbortSignal.timeout(5000) // 5 segundos
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
       })
       
       if (!response.ok) {
         if (response.status === 404) {
-          console.log('❌ Produto não encontrado')
           return null
         }
-        throw new Error(`Erro HTTP: ${response.status}`)
+        throw new Error(`Erro na API: ${response.status}`)
       }
       
-      const dbProduct: DatabaseProduct = await response.json()
-      console.log('✅ Produto encontrado:', dbProduct)
+      const dbProduct = await response.json()
       return this.convertFromDatabase(dbProduct)
     } catch (error) {
-      console.error('❌ Erro ao buscar produto:', error)
-      return null
+      console.error('❌ Erro ao buscar produto por ID:', error)
+      throw error
     }
   }
 
   // POST /api/produtos - Criar novo produto
-  static async create(product: Omit<Product, 'id'>): Promise<Product | null> {
+  static async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
     try {
-      console.log('➕ Criando produto:', product)
-      const dbProduct = this.convertToDatabase(product)
-      console.log('🔄 Dados para API:', dbProduct)
+      console.log('🌐 Criando produto:', product)
       
-      const headers = await this.getAuthHeaders()
+      const dbProduct = this.convertToDatabase(product)
       
       const response = await fetch(this.baseUrl, {
         method: 'POST',
-        headers,
-        body: JSON.stringify(dbProduct),
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbProduct)
       })
-      
-      console.log('📡 Resposta da criação:', response.status)
       
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Erro na criação:', errorText)
-        throw new Error(`Erro HTTP: ${response.status}`)
+        console.error('❌ Erro ao criar produto:', errorText)
+        throw new Error(`Erro na API: ${response.status}`)
       }
       
-      const createdProduct: DatabaseProduct = await response.json()
-      console.log('✅ Produto criado:', createdProduct)
+      const createdProduct = await response.json()
       return this.convertFromDatabase(createdProduct)
     } catch (error) {
       console.error('❌ Erro ao criar produto:', error)
@@ -271,31 +166,27 @@ export class ProductService {
   }
 
   // PUT /api/produtos/[id] - Atualizar produto
-  static async update(id: string, product: Partial<Product>): Promise<Product | null> {
+  static async update(id: string, product: Partial<Product>): Promise<Product> {
     try {
-      console.log('✏️ Atualizando produto:', id, product)
-      const dbProduct = this.convertToDatabase(product)
-      console.log('🔄 Dados para API:', dbProduct)
+      console.log('🌐 Atualizando produto:', id, product)
       
-      const headers = await this.getAuthHeaders()
+      const dbProduct = this.convertToDatabase(product)
       
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'PUT',
-        headers,
-        body: JSON.stringify(dbProduct),
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbProduct)
       })
-      
-      console.log('📡 Resposta da atualização:', response.status)
       
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Erro na atualização:', errorText)
-        throw new Error(`Erro HTTP: ${response.status}`)
+        console.error('❌ Erro ao atualizar produto:', errorText)
+        throw new Error(`Erro na API: ${response.status}`)
       }
       
-      const updatedProduct: DatabaseProduct = await response.json()
-      console.log('✅ Produto atualizado:', updatedProduct)
+      const updatedProduct = await response.json()
       return this.convertFromDatabase(updatedProduct)
     } catch (error) {
       console.error('❌ Erro ao atualizar produto:', error)
@@ -303,32 +194,31 @@ export class ProductService {
     }
   }
 
-  // DELETE /api/produtos/[id] - Excluir produto
-  static async delete(id: string): Promise<boolean> {
+  // DELETE /api/produtos/[id] - Deletar produto
+  static async delete(id: string): Promise<void> {
     try {
-      console.log('🗑️ Excluindo produto:', id)
-      
-      const headers = await this.getAuthHeaders()
+      console.log('🌐 Deletando produto:', id)
       
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'DELETE',
-        headers,
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        headers: {
+          'Content-Type': 'application/json',
+        }
       })
       
-      console.log('📡 Resposta da exclusão:', response.status)
-      
-      if (response.ok) {
-        console.log('✅ Produto excluído com sucesso')
-        return true
-      } else {
+      if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Erro na exclusão:', errorText)
-        return false
+        console.error('❌ Erro ao deletar produto:', errorText)
+        throw new Error(`Erro na API: ${response.status}`)
       }
+      
+      console.log('✅ Produto deletado com sucesso')
     } catch (error) {
-      console.error('❌ Erro ao excluir produto:', error)
-      return false
+      console.error('❌ Erro ao deletar produto:', error)
+      throw error
     }
   }
 }
+
+// Exportar tipos para uso em outros arquivos
+export type { Product, DatabaseProduct }
