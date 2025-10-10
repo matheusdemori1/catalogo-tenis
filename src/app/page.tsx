@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight, Mail, Lock, Zap } from 'lucide-react'
 import { useProducts, useSiteConfig } from '@/hooks/useRealtimeSync'
-import { supabase, handleAuthError } from '@/lib/supabase'
-import { useAuthErrorListener } from '@/lib/authErrorHandler'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Tipos de dados
 interface Color {
@@ -60,6 +59,7 @@ const heroImages = [
 export default function Home() {
   const { products, setProducts, addProduct, updateProduct, deleteProduct, loading, error } = useProducts()
   const [siteConfig, setSiteConfig] = useSiteConfig()
+  const { isAdmin, signIn, signOut, loading: authLoading } = useAuth()
   
   // Garantir que products seja sempre um array
   const safeProducts: Product[] = Array.isArray(products) ? products : []
@@ -68,7 +68,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<'all' | Product['category']>('all')
   const [selectedBrand, setSelectedBrand] = useState<'all' | string>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [isAdmin, setIsAdmin] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [loginData, setLoginData] = useState({ email: '', password: '' })
   const [loginLoading, setLoginLoading] = useState(false)
@@ -117,53 +116,7 @@ export default function Home() {
     setFilteredProducts(filtered)
   }, [products, selectedCategory, selectedBrand, searchTerm])
 
-  // Verificar se usuário já está logado ao carregar a página
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      if (supabase) {
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession()
-          
-          if (error) {
-            console.error('❌ Erro ao verificar sessão:', error)
-            // Tratar erro de refresh token
-            if (handleAuthError(error)) {
-              setIsAdmin(false)
-              return
-            }
-          }
-          
-          if (session?.user) {
-            setIsAdmin(true)
-            console.log('✅ Usuário já autenticado:', session.user.email)
-          }
-        } catch (error) {
-          console.error('❌ Erro inesperado ao verificar sessão:', error)
-          handleAuthError(error)
-          setIsAdmin(false)
-        }
-      }
-    }
-    
-    checkAuthStatus()
-    
-    // Configurar listener para erros de autenticação globais
-    const cleanup = useAuthErrorListener(() => {
-      console.log('🔄 Erro de autenticação detectado, fazendo logout...')
-      setIsAdmin(false)
-      setShowLogin(false)
-      setLoginData({ email: '', password: '' })
-    })
-    
-    return cleanup
-  }, [])
-
   const handleLogin = async () => {
-    if (!supabase) {
-      alert('Supabase não configurado. Configure as variáveis de ambiente.')
-      return
-    }
-
     if (!loginData.email || !loginData.password) {
       alert('Por favor, preencha email e senha.')
       return
@@ -172,42 +125,20 @@ export default function Home() {
     setLoginLoading(true)
     
     try {
-      console.log('🔐 Tentando fazer login com:', loginData.email)
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
-      })
+      const { error } = await signIn(loginData.email, loginData.password)
 
       if (error) {
         console.error('❌ Erro no login:', error.message)
-        
-        // Tratar erro de refresh token
-        if (handleAuthError(error)) {
-          alert('Sessão expirada. Tente fazer login novamente.')
-          return
-        }
-        
         alert(`Erro no login: ${error.message}`)
         return
       }
 
-      if (data.user) {
-        console.log('✅ Login realizado com sucesso:', data.user.email)
-        setIsAdmin(true)
-        setShowLogin(false)
-        setLoginData({ email: '', password: '' })
-        alert('Login realizado com sucesso!')
-      }
+      console.log('✅ Login realizado com sucesso')
+      setShowLogin(false)
+      setLoginData({ email: '', password: '' })
+      alert('Login realizado com sucesso!')
     } catch (error) {
       console.error('❌ Erro inesperado no login:', error)
-      
-      // Tratar erro de refresh token
-      if (handleAuthError(error)) {
-        alert('Sessão expirada. Tente fazer login novamente.')
-        return
-      }
-      
       alert('Erro inesperado. Tente novamente.')
     } finally {
       setLoginLoading(false)
@@ -215,15 +146,7 @@ export default function Home() {
   }
 
   const handleLogout = async () => {
-    if (supabase) {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('❌ Erro no logout:', error.message)
-      } else {
-        console.log('✅ Logout realizado com sucesso')
-      }
-    }
-    setIsAdmin(false)
+    await signOut()
   }
 
   const selectColor = (productId: string, colorId: string) => {
@@ -354,12 +277,12 @@ export default function Home() {
     setCurrentImageIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length)
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">Carregando produtos...</p>
+          <p className="text-gray-300">Carregando...</p>
         </div>
       </div>
     )
@@ -605,9 +528,32 @@ export default function Home() {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => {
-            const selectedColor = product.colors.find(c => c.id === product.selectedColorId)
+        {safeProducts.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ShoppingBag className="w-12 h-12 text-gray-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">Nenhum produto cadastrado</h3>
+              <p className="text-gray-400 mb-6">
+                Ainda não há produtos disponíveis no catálogo. 
+                {isAdmin && " Use o botão 'Adicionar' para cadastrar o primeiro produto."}
+              </p>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAddProduct(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all flex items-center gap-2 mx-auto"
+                >
+                  <Plus className="w-5 h-5" />
+                  Adicionar Primeiro Produto
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => {
+              const selectedColor = product.colors.find(c => c.id === product.selectedColorId)
             
             return (
               <div key={product.id} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 overflow-hidden group border border-gray-700/50">
@@ -710,11 +656,12 @@ export default function Home() {
               </div>
             )
           })}
-        </div>
+          </div>
+        )}
 
-        {filteredProducts.length === 0 && (
+        {filteredProducts.length === 0 && safeProducts.length > 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">Nenhum produto encontrado</p>
+            <p className="text-gray-400 text-lg">Nenhum produto encontrado com os filtros aplicados</p>
           </div>
         )}
       </main>

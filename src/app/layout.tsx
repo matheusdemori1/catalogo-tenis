@@ -8,6 +8,7 @@ import "./globals.css";
 // Import all available fonts for AI usage
 import "../lib/fonts";
 import { setupGlobalAuthErrorHandler } from "../lib/authErrorHandler";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   useEffect(() => {
-    // Configurar interceptador global de erros de autenticação
-    setupGlobalAuthErrorHandler()
+    // Só configurar no cliente
+    if (typeof window !== 'undefined') {
+      setupGlobalAuthErrorHandler()
+    }
   }, [])
 
   return (
@@ -39,7 +42,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

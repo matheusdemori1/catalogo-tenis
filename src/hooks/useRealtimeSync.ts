@@ -6,6 +6,9 @@ export function useRealtimeSync<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue)
 
   useEffect(() => {
+    // CORREÇÃO: Verificar se estamos no navegador antes de usar localStorage
+    if (typeof window === 'undefined') return
+
     // Carregar valor inicial do localStorage
     const stored = localStorage.getItem(key)
     if (stored) {
@@ -37,12 +40,16 @@ export function useRealtimeSync<T>(key: string, initialValue: T) {
       : newValue
     
     setValue(updatedValue)
-    localStorage.setItem(key, JSON.stringify(updatedValue))
     
-    // Disparar evento customizado para sincronização na mesma aba
-    window.dispatchEvent(new CustomEvent(`${key}-updated`, { 
-      detail: updatedValue 
-    }))
+    // CORREÇÃO: Verificar se estamos no navegador antes de usar localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(updatedValue))
+      
+      // Disparar evento customizado para sincronização na mesma aba
+      window.dispatchEvent(new CustomEvent(`${key}-updated`, { 
+        detail: updatedValue 
+      }))
+    }
   }
 
   return [value, updateValue] as const
@@ -330,10 +337,13 @@ export function useProducts() {
     const safeProducts = Array.isArray(updatedProducts) ? updatedProducts : []
     setProducts(safeProducts)
     
-    // Disparar evento para sincronização entre abas
-    window.dispatchEvent(new CustomEvent('products-updated', { 
-      detail: safeProducts 
-    }))
+    // CORREÇÃO: Verificar se estamos no navegador antes de usar window
+    if (typeof window !== 'undefined') {
+      // Disparar evento para sincronização entre abas
+      window.dispatchEvent(new CustomEvent('products-updated', { 
+        detail: safeProducts 
+      }))
+    }
   }
 
   // Função para adicionar produto
@@ -397,6 +407,9 @@ export function useProducts() {
 
   // Listener para sincronização entre abas
   useEffect(() => {
+    // CORREÇÃO: Verificar se estamos no navegador antes de usar window
+    if (typeof window === 'undefined') return
+
     const handleProductsUpdate = (e: CustomEvent) => {
       const newProducts = e.detail
       if (Array.isArray(newProducts)) {

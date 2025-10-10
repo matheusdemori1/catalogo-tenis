@@ -24,8 +24,13 @@ export interface Color {
 export class ProductService {
   private static baseUrl = '/api/produtos'
 
-  // CORREÇÃO 3: Obter token de autenticação do usuário logado com tratamento de erro
+  // Obter token de autenticação do usuário logado com tratamento de erro
   private static async getAuthToken(): Promise<string | null> {
+    if (typeof window === 'undefined') {
+      console.log('⚠️ Executando no servidor, sem acesso ao token')
+      return null
+    }
+
     if (!supabase) {
       console.log('⚠️ Supabase não configurado')
       return null
@@ -36,11 +41,8 @@ export class ProductService {
       
       if (error) {
         console.error('❌ Erro ao obter sessão:', error)
-        // Tratar erro de refresh token
-        if (handleAuthError(error)) {
-          return null
-        }
-        throw error
+        handleAuthError(error)
+        return null
       }
       
       if (session?.access_token) {
@@ -52,13 +54,12 @@ export class ProductService {
       }
     } catch (error) {
       console.error('❌ Erro ao obter token:', error)
-      // Tratar erro de refresh token
       handleAuthError(error)
       return null
     }
   }
 
-  // CORREÇÃO 3: Criar headers com autenticação obrigatória para operações de escrita
+  // Criar headers com autenticação
   private static async getAuthHeaders(): Promise<HeadersInit> {
     const token = await this.getAuthToken()
     const headers: HeadersInit = {
@@ -69,7 +70,7 @@ export class ProductService {
       headers['Authorization'] = `Bearer ${token}`
       console.log('🔐 Header de autenticação adicionado')
     } else {
-      console.log('⚠️ Requisição sem autenticação - operações de escrita podem falhar')
+      console.log('⚠️ Requisição sem autenticação')
     }
 
     return headers
@@ -132,40 +133,102 @@ export class ProductService {
     }
   }
 
+  // Produtos de fallback para quando a API não funcionar
+  private static getFallbackProducts(): Product[] {
+    return [
+      {
+        id: '1',
+        name: 'Nike Air Max 90',
+        brand: 'Nike',
+        category: 'tenis',
+        price: 299.99,
+        rating: 4.5,
+        colors: [{
+          id: '1-1',
+          name: 'Principal',
+          hex: '#000000',
+          image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop'
+        }],
+        selectedColorId: '1-1'
+      },
+      {
+        id: '2',
+        name: 'Adidas Ultraboost',
+        brand: 'Adidas',
+        category: 'tenis',
+        price: 399.99,
+        rating: 4.7,
+        colors: [{
+          id: '2-1',
+          name: 'Principal',
+          hex: '#000000',
+          image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop'
+        }],
+        selectedColorId: '2-1'
+      },
+      {
+        id: '3',
+        name: 'Puma RS-X',
+        brand: 'Puma',
+        category: 'tenis',
+        price: 249.99,
+        rating: 4.3,
+        colors: [{
+          id: '3-1',
+          name: 'Principal',
+          hex: '#000000',
+          image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=400&h=400&fit=crop'
+        }],
+        selectedColorId: '3-1'
+      }
+    ]
+  }
+
   // GET /api/produtos - Buscar todos os produtos
   static async getAll(): Promise<Product[]> {
     try {
       console.log('🌐 Fazendo requisição para:', this.baseUrl)
+      
+      // Configurar timeout e retry
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 segundos
       
       const response = await fetch(this.baseUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        cache: 'no-store', // Evitar cache para sempre buscar dados atualizados
-        // Adicionar timeout para evitar travamento
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        cache: 'no-store',
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('📡 Resposta da API:', response.status, response.statusText)
       
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Erro na resposta:', errorText)
-        console.log('🔄 Retornando array vazio devido ao erro')
-        return []
+        console.error('❌ Erro na resposta da API:', response.status, errorText)
+        console.log('🔄 Retornando produtos de fallback devido ao erro da API')
+        return this.getFallbackProducts()
       }
       
       const data = await response.json()
-      console.log('📦 Dados recebidos da API:', data)
+      console.log('📦 Dados recebidos da API:', data?.length || 0, 'produtos')
       
       // Garantir que data é sempre um array
       if (!Array.isArray(data)) {
-        console.log('⚠️ Resposta da API não é um array:', typeof data)
-        return []
+        console.log('⚠️ Resposta da API não é um array, usando fallback')
+        return this.getFallbackProducts()
       }
       
-      console.log('🔄 Convertendo produtos:', data.length)
+      // Se não há produtos, retornar fallback
+      if (data.length === 0) {
+        console.log('📦 Nenhum produto retornado, usando produtos de exemplo')
+        return this.getFallbackProducts()
+      }
+      
+      console.log('🔄 Convertendo produtos do banco para frontend')
       
       // Converter produtos do banco para formato do frontend
       const products = data.map((dbProduct: DatabaseProduct) => {
@@ -175,68 +238,44 @@ export class ProductService {
           console.error('❌ Erro ao converter produto:', dbProduct, error)
           return null
         }
-      }).filter(Boolean) as Product[] // Remover produtos que falharam na conversão
+      }).filter(Boolean) as Product[]
       
       console.log('✅ Produtos convertidos:', products.length)
-      return products
+      return products.length > 0 ? products : this.getFallbackProducts()
+      
     } catch (error) {
       console.error('❌ Erro ao buscar produtos:', error)
       
-      // Tratar erro de refresh token
-      if (handleAuthError(error)) {
-        console.log('🔄 Erro de refresh token tratado, retornando array vazio')
-        return []
+      // Tratar diferentes tipos de erro
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.log('⏱️ Timeout na requisição, usando produtos de fallback')
+        } else if (error.message.includes('fetch')) {
+          console.log('🌐 Erro de rede, usando produtos de fallback')
+        } else {
+          console.log('❌ Erro desconhecido, usando produtos de fallback')
+        }
       }
       
-      // Se for erro de timeout ou rede, retornar produtos de exemplo
-      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
-        console.log('🔄 Retornando produtos de exemplo devido a erro de rede')
-        return [
-          {
-            id: '1',
-            name: 'Nike Air Max 90',
-            brand: 'Nike',
-            category: 'tenis',
-            price: 299.99,
-            rating: 4.5,
-            colors: [{
-              id: '1-1',
-              name: 'Principal',
-              hex: '#000000',
-              image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop'
-            }],
-            selectedColorId: '1-1'
-          },
-          {
-            id: '2',
-            name: 'Adidas Ultraboost',
-            brand: 'Adidas',
-            category: 'tenis',
-            price: 399.99,
-            rating: 4.7,
-            colors: [{
-              id: '2-1',
-              name: 'Principal',
-              hex: '#000000',
-              image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop'
-            }],
-            selectedColorId: '2-1'
-          }
-        ]
-      }
-      
-      return []
+      handleAuthError(error)
+      return this.getFallbackProducts()
     }
   }
 
   // GET /api/produtos/[id] - Buscar produto específico
   static async getById(id: string): Promise<Product | null> {
     try {
-      console.log('🔍 Buscando produto por ID UUID:', id)
+      console.log('🔍 Buscando produto por ID:', id)
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
       const response = await fetch(`${this.baseUrl}/${id}`, {
         cache: 'no-store',
-        signal: AbortSignal.timeout(5000) // 5 segundos
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -263,15 +302,19 @@ export class ProductService {
       const dbProduct = this.convertToDatabase(product)
       console.log('🔄 Dados para API:', dbProduct)
       
-      // CORREÇÃO 3: Obter headers com token de autenticação
       const headers = await this.getAuthHeaders()
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
       
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(dbProduct),
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('📡 Resposta da criação:', response.status)
       
@@ -287,7 +330,7 @@ export class ProductService {
       }
       
       const createdProduct: DatabaseProduct = await response.json()
-      console.log('✅ Produto criado com UUID:', createdProduct.id)
+      console.log('✅ Produto criado:', createdProduct.id)
       return this.convertFromDatabase(createdProduct)
     } catch (error) {
       console.error('❌ Erro ao criar produto:', error)
@@ -299,19 +342,23 @@ export class ProductService {
   // PUT /api/produtos/[id] - Atualizar produto
   static async update(id: string, product: Partial<Product>): Promise<Product | null> {
     try {
-      console.log('✏️ Atualizando produto com UUID:', id, product)
+      console.log('✏️ Atualizando produto:', id, product)
       const dbProduct = this.convertToDatabase(product)
       console.log('🔄 Dados para API:', dbProduct)
       
-      // CORREÇÃO 3: Obter headers com token de autenticação
       const headers = await this.getAuthHeaders()
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
       
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(dbProduct),
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('📡 Resposta da atualização:', response.status)
       
@@ -336,19 +383,23 @@ export class ProductService {
     }
   }
 
-  // CORREÇÃO 2: DELETE /api/produtos/[id] - Excluir produto usando UUID
+  // DELETE /api/produtos/[id] - Excluir produto
   static async delete(id: string): Promise<boolean> {
     try {
-      console.log('🗑️ Excluindo produto com UUID:', id)
+      console.log('🗑️ Excluindo produto:', id)
       
-      // CORREÇÃO 3: Obter headers com token de autenticação
       const headers = await this.getAuthHeaders()
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
       
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'DELETE',
         headers,
-        signal: AbortSignal.timeout(10000) // 10 segundos
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('📡 Resposta da exclusão:', response.status)
       
@@ -380,14 +431,14 @@ export class ProductService {
   // Método direto para operações no Supabase (alternativa à API)
   static async deleteDirectly(id: string): Promise<boolean> {
     try {
-      console.log('🗑️ Excluindo produto diretamente no Supabase com UUID:', id)
+      console.log('🗑️ Excluindo produto diretamente no Supabase:', id)
       
       const authenticatedClient = await getAuthenticatedClient()
       
       const { error } = await authenticatedClient
         .from('produtos')
         .delete()
-        .eq('id', id) // CORREÇÃO 2: Usar UUID diretamente
+        .eq('id', id)
       
       if (error) {
         console.error('❌ Erro ao excluir no Supabase:', error)

@@ -1,7 +1,10 @@
 import { handleAuthError } from './supabase'
 
-// Interceptador global para erros de autenticação
+// Interceptador global para erros de autenticação - SSR Safe
 export function setupGlobalAuthErrorHandler() {
+  // Só executar no cliente
+  if (typeof window === 'undefined') return
+
   // Interceptar erros do console
   const originalConsoleError = console.error
   console.error = (...args) => {
@@ -60,8 +63,13 @@ export function setupGlobalAuthErrorHandler() {
   console.log('✅ Interceptador global de erros de autenticação configurado')
 }
 
-// Hook para componentes React escutarem erros de autenticação
+// Hook para componentes React escutarem erros de autenticação - SSR Safe
 export function useAuthErrorListener(callback: () => void) {
+  // Só executar no cliente
+  if (typeof window === 'undefined') {
+    return () => {} // Retornar função vazia para cleanup
+  }
+
   const handleAuthError = () => {
     console.log('🔄 Evento de erro de autenticação recebido')
     callback()

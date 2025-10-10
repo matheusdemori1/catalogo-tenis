@@ -10,16 +10,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Variáveis do Supabase não configuradas. Configure nas variáveis de ambiente.')
 }
 
-// Cliente público (para leitura e operações autenticadas) com tratamento de refresh token
+// Cliente público (para leitura e operações autenticadas) - SSR Safe
 export const supabase = supabaseUrl && supabaseAnonKey 
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
-        // Configurações para lidar com refresh token inválido
+        // Storage customizado que só funciona no cliente
         storage: {
           getItem: (key: string) => {
+            if (typeof window === 'undefined') return null
             try {
               return localStorage.getItem(key)
             } catch (error) {
@@ -28,6 +29,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
             }
           },
           setItem: (key: string, value: string) => {
+            if (typeof window === 'undefined') return
             try {
               localStorage.setItem(key, value)
             } catch (error) {
@@ -35,6 +37,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
             }
           },
           removeItem: (key: string) => {
+            if (typeof window === 'undefined') return
             try {
               localStorage.removeItem(key)
             } catch (error) {
@@ -88,32 +91,32 @@ export const getAuthenticatedClient = async () => {
   })
 }
 
-// Função para limpar sessão inválida
+// Função para limpar sessão inválida - SSR Safe
 export const clearInvalidSession = async () => {
-  if (supabase) {
-    try {
-      console.log('🧹 Limpando sessão inválida...')
-      await supabase.auth.signOut()
-      
-      // Limpar localStorage manualmente
-      const keysToRemove = [
-        'sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token',
-        'supabase.auth.token',
-        'supabase_auth_token'
-      ]
-      
-      keysToRemove.forEach(key => {
-        try {
-          localStorage.removeItem(key)
-        } catch (error) {
-          console.warn('Erro ao limpar chave:', key, error)
-        }
-      })
-      
-      console.log('✅ Sessão limpa com sucesso')
-    } catch (error) {
-      console.error('❌ Erro ao limpar sessão:', error)
-    }
+  if (!supabase || typeof window === 'undefined') return
+
+  try {
+    console.log('🧹 Limpando sessão inválida...')
+    await supabase.auth.signOut()
+    
+    // Limpar localStorage manualmente apenas no cliente
+    const keysToRemove = [
+      'sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token',
+      'supabase.auth.token',
+      'supabase_auth_token'
+    ]
+    
+    keysToRemove.forEach(key => {
+      try {
+        localStorage.removeItem(key)
+      } catch (error) {
+        console.warn('Erro ao limpar chave:', key, error)
+      }
+    })
+    
+    console.log('✅ Sessão limpa com sucesso')
+  } catch (error) {
+    console.error('❌ Erro ao limpar sessão:', error)
   }
 }
 
@@ -128,8 +131,8 @@ export const handleAuthError = (error: any) => {
   return false // Erro não relacionado a refresh token
 }
 
-// Configurar listener para erros de autenticação
-if (supabase) {
+// Configurar listener para erros de autenticação - apenas no cliente
+if (typeof window !== 'undefined' && supabase) {
   supabase.auth.onAuthStateChange((event, session) => {
     console.log('🔐 Estado de autenticação mudou:', event)
     
