@@ -21,6 +21,7 @@ export interface DatabaseProduct {
 
 // SQL para criar a tabela produtos (execute no painel do Supabase)
 export const createProductsTableSQL = `
+-- Criar tabela produtos
 CREATE TABLE IF NOT EXISTS produtos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nome VARCHAR(255) NOT NULL,
@@ -42,19 +43,22 @@ CREATE INDEX IF NOT EXISTS idx_produtos_created_at ON produtos(created_at);
 -- Habilitar RLS (Row Level Security)
 ALTER TABLE produtos ENABLE ROW LEVEL SECURITY;
 
--- Política para permitir leitura pública
-CREATE POLICY IF NOT EXISTS "Permitir leitura pública de produtos" ON produtos
+-- Remover políticas existentes se houver
+DROP POLICY IF EXISTS "Permitir leitura pública de produtos" ON produtos;
+DROP POLICY IF EXISTS "Permitir inserção pública de produtos" ON produtos;
+DROP POLICY IF EXISTS "Permitir atualização pública de produtos" ON produtos;
+DROP POLICY IF EXISTS "Permitir exclusão pública de produtos" ON produtos;
+
+-- Criar políticas de segurança
+CREATE POLICY "Permitir leitura pública de produtos" ON produtos
   FOR SELECT USING (true);
 
--- Política para permitir inserção pública (para desenvolvimento)
-CREATE POLICY IF NOT EXISTS "Permitir inserção pública de produtos" ON produtos
+CREATE POLICY "Permitir inserção pública de produtos" ON produtos
   FOR INSERT WITH CHECK (true);
 
--- Política para permitir atualização pública (para desenvolvimento)
-CREATE POLICY IF NOT EXISTS "Permitir atualização pública de produtos" ON produtos
+CREATE POLICY "Permitir atualização pública de produtos" ON produtos
   FOR UPDATE USING (true);
 
--- Política para permitir exclusão pública (para desenvolvimento)
-CREATE POLICY IF NOT EXISTS "Permitir exclusão pública de produtos" ON produtos
+CREATE POLICY "Permitir exclusão pública de produtos" ON produtos
   FOR DELETE USING (true);
 `
