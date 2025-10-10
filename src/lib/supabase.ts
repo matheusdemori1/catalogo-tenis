@@ -1,21 +1,52 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Configuração com fallback para desenvolvimento
+// CORREÇÃO 1: Leitura correta das variáveis de ambiente do Vercel
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 // Verificar se as variáveis estão configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Variáveis do Supabase não configuradas. Usando modo fallback.')
+  console.warn('⚠️ Variáveis do Supabase não configuradas. Configure nas variáveis de ambiente.')
 }
 
-// Cliente público (para leitura)
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+// Cliente público (para leitura e operações autenticadas) com tratamento de refresh token
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        // Configurações para lidar com refresh token inválido
+        storage: {
+          getItem: (key: string) => {
+            try {
+              return localStorage.getItem(key)
+            } catch (error) {
+              console.warn('Erro ao acessar localStorage:', error)
+              return null
+            }
+          },
+          setItem: (key: string, value: string) => {
+            try {
+              localStorage.setItem(key, value)
+            } catch (error) {
+              console.warn('Erro ao salvar no localStorage:', error)
+            }
+          },
+          removeItem: (key: string) => {
+            try {
+              localStorage.removeItem(key)
+            } catch (error) {
+              console.warn('Erro ao remover do localStorage:', error)
+            }
+          }
+        }
+      }
+    })
   : null
 
-// Cliente administrativo (para operações de escrita)
+// Cliente administrativo (para operações de escrita com service key)
 export const supabaseAdmin = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -23,32 +54,93 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey
         persistSession: false
       }
     })
-  : (supabaseUrl && supabaseAnonKey
+  : (supabaseUrl && supabaseAnonKey 
       ? createClient(supabaseUrl, supabaseAnonKey)
       : null)
 
-// Função para criar cliente autenticado (usado nas APIs)
-export function createAuthenticatedClient(authToken?: string) {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('⚠️ Variáveis do Supabase não configuradas')
-    return null
+// Função para obter cliente autenticado com token do usuário
+export const getAuthenticatedClient = async () => {
+  if (!supabase) {
+    throw new Error('Supabase não configurado')
   }
 
-  const client = createClient(supabaseUrl, supabaseAnonKey)
-
-  // Se há token de autenticação, configurar o cliente
-  if (authToken) {
-    client.auth.setSession({
-      access_token: authToken,
-      refresh_token: '',
-      expires_in: 3600,
-      expires_at: Date.now() + 3600000,
-      token_type: 'bearer',
-      user: null
-    })
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  if (error) {
+    console.error('❌ Erro ao obter sessão:', error)
+    if (handleAuthError(error)) {
+      throw new Error('Sessão expirada')
+    }
+    throw error
   }
 
-  return client
+  if (!session) {
+    throw new Error('Usuário não autenticado')
+  }
+
+  // Retornar cliente com token de autenticação
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    }
+  })
+}
+
+// Função para limpar sessão inválida
+export const clearInvalidSession = async () => {
+  if (supabase) {
+    try {
+      console.log('🧹 Limpando sessão inválida...')
+      await supabase.auth.signOut()
+      
+      // Limpar localStorage manualmente
+      const keysToRemove = [
+        'sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token',
+        'supabase.auth.token',
+        'supabase_auth_token'
+      ]
+      
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key)
+        } catch (error) {
+          console.warn('Erro ao limpar chave:', key, error)
+        }
+      })
+      
+      console.log('✅ Sessão limpa com sucesso')
+    } catch (error) {
+      console.error('❌ Erro ao limpar sessão:', error)
+    }
+  }
+}
+
+// Função para verificar e tratar erros de autenticação
+export const handleAuthError = (error: any) => {
+  if (error?.message?.includes('Invalid Refresh Token') || 
+      error?.message?.includes('Refresh Token Not Found')) {
+    console.log('🔄 Detectado refresh token inválido, limpando sessão...')
+    clearInvalidSession()
+    return true // Indica que o erro foi tratado
+  }
+  return false // Erro não relacionado a refresh token
+}
+
+// Configurar listener para erros de autenticação
+if (supabase) {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔐 Estado de autenticação mudou:', event)
+    
+    if (event === 'SIGNED_OUT') {
+      console.log('👋 Usuário deslogado')
+    } else if (event === 'SIGNED_IN') {
+      console.log('👋 Usuário logado:', session?.user?.email)
+    } else if (event === 'TOKEN_REFRESHED') {
+      console.log('🔄 Token renovado com sucesso')
+    }
+  })
 }
 
 // Interface para o produto no banco de dados
@@ -67,7 +159,7 @@ export interface DatabaseProduct {
 
 // SQL para criar a tabela produtos (execute no painel do Supabase)
 export const createProductsTableSQL = `
-// Criar tabela produtos
+-- Criar tabela produtos
 CREATE TABLE IF NOT EXISTS produtos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nome VARCHAR(255) NOT NULL,
@@ -81,30 +173,30 @@ CREATE TABLE IF NOT EXISTS produtos (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-// Criar índices para melhor performance
+-- Criar índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_produtos_marca ON produtos(marca);
 CREATE INDEX IF NOT EXISTS idx_produtos_categorias ON produtos USING GIN(categorias);
 CREATE INDEX IF NOT EXISTS idx_produtos_created_at ON produtos(created_at);
 
-// Habilitar RLS (Row Level Security)
+-- Habilitar RLS (Row Level Security)
 ALTER TABLE produtos ENABLE ROW LEVEL SECURITY;
 
-// Remover políticas existentes se houver
+-- Remover políticas existentes se houver
 DROP POLICY IF EXISTS "Permitir leitura pública de produtos" ON produtos;
-DROP POLICY IF EXISTS "Permitir inserção pública de produtos" ON produtos;
-DROP POLICY IF EXISTS "Permitir atualização pública de produtos" ON produtos;
-DROP POLICY IF EXISTS "Permitir exclusão pública de produtos" ON produtos;
+DROP POLICY IF EXISTS "Permitir inserção para usuários autenticados" ON produtos;
+DROP POLICY IF EXISTS "Permitir atualização para usuários autenticados" ON produtos;
+DROP POLICY IF EXISTS "Permitir exclusão para usuários autenticados" ON produtos;
 
-// Criar políticas de segurança
+-- CORREÇÃO 3: Criar políticas de segurança que exigem autenticação
 CREATE POLICY "Permitir leitura pública de produtos" ON produtos
   FOR SELECT USING (true);
 
-CREATE POLICY "Permitir inserção pública de produtos" ON produtos
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir inserção para usuários autenticados" ON produtos
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Permitir atualização pública de produtos" ON produtos
-  FOR UPDATE USING (true);
+CREATE POLICY "Permitir atualização para usuários autenticados" ON produtos
+  FOR UPDATE USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Permitir exclusão pública de produtos" ON produtos
-  FOR DELETE USING (true);
+CREATE POLICY "Permitir exclusão para usuários autenticados" ON produtos
+  FOR DELETE USING (auth.uid() IS NOT NULL);
 `

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight, Mail, Lock, Zap } from 'lucide-react'
 import { useProducts, useSiteConfig } from '@/hooks/useRealtimeSync'
-import { supabase } from '@/lib/supabase'
+import { supabase, handleAuthError } from '@/lib/supabase'
+import { useAuthErrorListener } from '@/lib/authErrorHandler'
 
 // Tipos de dados
 interface Color {
@@ -120,14 +121,41 @@ export default function Home() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          setIsAdmin(true)
-          console.log('✅ Usuário já autenticado:', session.user.email)
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession()
+          
+          if (error) {
+            console.error('❌ Erro ao verificar sessão:', error)
+            // Tratar erro de refresh token
+            if (handleAuthError(error)) {
+              setIsAdmin(false)
+              return
+            }
+          }
+          
+          if (session?.user) {
+            setIsAdmin(true)
+            console.log('✅ Usuário já autenticado:', session.user.email)
+          }
+        } catch (error) {
+          console.error('❌ Erro inesperado ao verificar sessão:', error)
+          handleAuthError(error)
+          setIsAdmin(false)
         }
       }
     }
+    
     checkAuthStatus()
+    
+    // Configurar listener para erros de autenticação globais
+    const cleanup = useAuthErrorListener(() => {
+      console.log('🔄 Erro de autenticação detectado, fazendo logout...')
+      setIsAdmin(false)
+      setShowLogin(false)
+      setLoginData({ email: '', password: '' })
+    })
+    
+    return cleanup
   }, [])
 
   const handleLogin = async () => {
@@ -153,6 +181,13 @@ export default function Home() {
 
       if (error) {
         console.error('❌ Erro no login:', error.message)
+        
+        // Tratar erro de refresh token
+        if (handleAuthError(error)) {
+          alert('Sessão expirada. Tente fazer login novamente.')
+          return
+        }
+        
         alert(`Erro no login: ${error.message}`)
         return
       }
@@ -166,6 +201,13 @@ export default function Home() {
       }
     } catch (error) {
       console.error('❌ Erro inesperado no login:', error)
+      
+      // Tratar erro de refresh token
+      if (handleAuthError(error)) {
+        alert('Sessão expirada. Tente fazer login novamente.')
+        return
+      }
+      
       alert('Erro inesperado. Tente novamente.')
     } finally {
       setLoginLoading(false)
