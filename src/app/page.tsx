@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, User, Star, MessageCircle, X, Plus, Edit, Trash2, Check, Settings, Upload, Palette, Sparkles, ShoppingBag, ChevronLeft, ChevronRight, Mail, Lock } from 'lucide-react'
 import { useProducts, useSiteConfig } from '@/hooks/useRealtimeSync'
+import { supabase } from '@/lib/supabase'
 
 // Tipos de dados
 interface Color {
@@ -68,7 +69,8 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
-  const [password, setPassword] = useState('')
+  const [loginData, setLoginData] = useState({ email: '', password: '' })
+  const [loginLoading, setLoginLoading] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [showSiteConfig, setShowSiteConfig] = useState(false)
@@ -114,17 +116,71 @@ export default function Home() {
     setFilteredProducts(filtered)
   }, [products, selectedCategory, selectedBrand, searchTerm])
 
-  const handleLogin = () => {
-    if (password === 'admin123') {
-      setIsAdmin(true)
-      setShowLogin(false)
-      setPassword('')
-    } else {
-      alert('Senha incorreta!')
+  // Verificar se usuário já está logado ao carregar a página
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          setIsAdmin(true)
+          console.log('✅ Usuário já autenticado:', session.user.email)
+        }
+      }
+    }
+    checkAuthStatus()
+  }, [])
+
+  const handleLogin = async () => {
+    if (!supabase) {
+      alert('Supabase não configurado. Configure as variáveis de ambiente.')
+      return
+    }
+
+    if (!loginData.email || !loginData.password) {
+      alert('Por favor, preencha email e senha.')
+      return
+    }
+
+    setLoginLoading(true)
+    
+    try {
+      console.log('🔐 Tentando fazer login com:', loginData.email)
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      })
+
+      if (error) {
+        console.error('❌ Erro no login:', error.message)
+        alert(`Erro no login: ${error.message}`)
+        return
+      }
+
+      if (data.user) {
+        console.log('✅ Login realizado com sucesso:', data.user.email)
+        setIsAdmin(true)
+        setShowLogin(false)
+        setLoginData({ email: '', password: '' })
+        alert('Login realizado com sucesso!')
+      }
+    } catch (error) {
+      console.error('❌ Erro inesperado no login:', error)
+      alert('Erro inesperado. Tente novamente.')
+    } finally {
+      setLoginLoading(false)
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase) {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('❌ Erro no logout:', error.message)
+      } else {
+        console.log('✅ Logout realizado com sucesso')
+      }
+    }
     setIsAdmin(false)
   }
 
@@ -630,14 +686,20 @@ export default function Home() {
         </div>
       )}
 
-      {/* Login Modal */}
+      {/* Login Modal com Email e Senha */}
       {showLogin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Login Administrativo</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <User className="w-6 h-6 text-orange-400" />
+                Login Administrativo
+              </h3>
               <button
-                onClick={() => setShowLogin(false)}
+                onClick={() => {
+                  setShowLogin(false)
+                  setLoginData({ email: '', password: '' })
+                }}
                 className="text-gray-400 hover:text-gray-300"
               >
                 <X className="w-6 h-6" />
@@ -645,20 +707,64 @@ export default function Home() {
             </div>
             
             <div className="space-y-4">
-              <input
-                type="password"
-                placeholder="Digite a senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-400"
-                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                  <input
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-400"
+                    disabled={loginLoading}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Senha
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                  <input
+                    type="password"
+                    placeholder="Digite sua senha"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-400"
+                    onKeyPress={(e) => e.key === 'Enter' && !loginLoading && handleLogin()}
+                    disabled={loginLoading}
+                  />
+                </div>
+              </div>
+
               <button
                 onClick={handleLogin}
-                className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-medium"
+                disabled={loginLoading}
+                className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Entrar
+                {loginLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Entrando...
+                  </>
+                ) : (
+                  <>
+                    <User className="w-5 h-5" />
+                    Entrar
+                  </>
+                )}
               </button>
+
+              <div className="text-center pt-4 border-t border-gray-700">
+                <p className="text-sm text-gray-400">
+                  Use suas credenciais do Supabase para acessar o painel administrativo
+                </p>
+              </div>
             </div>
           </div>
         </div>
